@@ -24,7 +24,12 @@ project(ftxui-roguelike-tutorial
   VERSION 1.0.0
 )
  
-add_executable(ftxui-roguelike-tutorial src/main.cpp)
+add_executable(ftxui-roguelike-tutorial
+  src/main.cpp
+  src/Actor.cpp
+  src/Map.cpp
+  src/World.cpp
+)
 target_include_directories(ftxui-roguelike-tutorial PRIVATE src)
  
 target_link_libraries(ftxui-roguelike-tutorial
