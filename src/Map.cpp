@@ -11,7 +11,13 @@ Map::Map(int width, int height) :
 
 bool Map::isWall(Point const& point) const
 {
-    return !m_tiles[point.x + point.y * m_width].canWalk;
+    auto const index = point.x + point.y * m_width;
+    if (index < 0 || index >= m_tiles.size())
+    {
+        return false;
+    }
+
+    return !m_tiles[index].canWalk;
 }
 
 void Map::setWall(Point const& point) {
