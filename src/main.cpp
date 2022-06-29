@@ -1,6 +1,8 @@
+#include <ftxui/screen/color.hpp>
 #include <ftxui/dom/elements.hpp>
-#include <ftxui/screen/screen.hpp>
-#include <iostream>
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/component/event.hpp>
+#include <ftxui/component/component.hpp>
 
 namespace
 {
@@ -16,15 +18,17 @@ struct Point
     int y = 0;
 };
 
+bool operator==(Point const& lhs, Point const& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
 class Actor
 {
 public :
    Actor(Point const& point, char codepoint, ftxui::Color const& color);
    ftxui::Element render() const;
-   int x() const;
-   int y() const;
 
-private:
    Point m_point;
    char m_codepoint;
    ftxui::Color m_color;
@@ -38,16 +42,6 @@ Actor::Actor(Point const& point, char codepoint, ftxui::Color const& color) :
 ftxui::Element Actor::render() const
 {
     return ftxui::text(std::string{m_codepoint}) | ftxui::color(m_color);
-}
-
-int Actor::x() const
-{
-    return m_point.x;
-}
-
-int Actor::y() const
-{
-    return m_point.y;
 }
 
 struct World
@@ -74,7 +68,7 @@ ftxui::Element World::render() const
         row.reserve(screen_width);
         for (int j = 0; j < screen_width; ++j)
         {
-            if (i == m_player.x() && j == m_player.y())
+            if (Point{j, i} == m_player.m_point)
             {
                 row.push_back(m_player.render());
             }
@@ -94,12 +88,43 @@ int main()
 
     World world({40, 25});
 
-    Element document = border(world.render());
+    auto screen = ScreenInteractive::FitComponent();
+    auto renderer = Renderer([&world] {
+        return border(world.render());
+    });
 
-    auto screen = Screen::Create(
-      Dimension::Fit(document),  // Width
-      Dimension::Fit(document)   // Height
-    );
-    Render(screen, document);
-    screen.Print();
+    auto component = CatchEvent(renderer, [&](Event event) {
+        if (event == Event::Character('q')) {
+            screen.ExitLoopClosure()();
+            return true;
+        }
+
+        if (event == ftxui::Event::ArrowUp)
+        {
+            --world.m_player.m_point.y;
+            return true;
+        }
+
+        if (event == ftxui::Event::ArrowRight)
+        {
+            ++world.m_player.m_point.x;
+            return true;
+        }
+
+        if (event == ftxui::Event::ArrowDown)
+        {
+            ++world.m_player.m_point.y;
+            return true;
+        }
+
+        if (event == ftxui::Event::ArrowLeft)
+        {
+            --world.m_player.m_point.x;
+            return true;
+        }
+
+        return false;
+    });
+
+    screen.Loop(component);
 }
