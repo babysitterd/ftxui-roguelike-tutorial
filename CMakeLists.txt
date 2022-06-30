@@ -37,3 +37,13 @@ target_link_libraries(ftxui-roguelike-tutorial
   PRIVATE ftxui::dom
   PRIVATE ftxui::component # Not needed for this example.
 )
+
+if (EMSCRIPTEN)
+  string(APPEND CMAKE_CXX_FLAGS " -s USE_PTHREADS")
+  string(APPEND CMAKE_EXE_LINKER_FLAGS " -s ASYNCIFY")
+  string(APPEND CMAKE_EXE_LINKER_FLAGS " -s PROXY_TO_PTHREAD")
+
+  foreach(file "index.html" "run_webassembly.py")
+    configure_file("src/${file}" ${file})
+  endforeach(file)
+endif()
