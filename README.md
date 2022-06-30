@@ -12,7 +12,7 @@ Webassembly build steps
 ```
 mkdir build_emscripten && cd build_emscripten
 emcmake cmake ..
-make -j
+cmake --build .
 ./run_webassembly.py
 (visit localhost:8000)
 ```
