@@ -1,8 +1,7 @@
 #include "World.hpp"
 
-World::World(Point const& player_position, int mapWidth, int mapHeight) :
-    m_player(player_position, '@', ftxui::Color::White),
-    m_map(mapWidth, mapHeight)
+World::World(Point const& player_position, int mapWidth, int mapHeight)
+    : m_player(player_position, '@', ftxui::Color::White), m_map(mapWidth, mapHeight)
 {
     m_actors.emplace(Point{60, 13}, '@', ftxui::Color::Yellow);
 }
@@ -22,8 +21,7 @@ ftxui::Element World::render() const
             {
                 row.push_back(m_player.render());
             }
-            else if (auto it = m_actors.find(current);
-                     it != m_actors.end())
+            else if (auto it = m_actors.find(current); it != m_actors.end())
             {
                 row.push_back(it->render());
             }
@@ -39,8 +37,7 @@ ftxui::Element World::render() const
 
 bool World::EventHandler(ftxui::Event const& event)
 {
-    auto rewind = [this, previous = m_player.m_point]()
-    {
+    auto rewind = [this, previous = m_player.m_point]() {
         if (m_map.isWall(m_player.m_point))
         {
             m_player.m_point = previous;

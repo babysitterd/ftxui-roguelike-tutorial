@@ -2,18 +2,18 @@
 
 #include "Point.hpp"
 
-#include <ftxui/screen/color.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/color.hpp>
 
 class Actor
 {
-public :
-   Actor(Point const& point, char codepoint, ftxui::Color const& color);
-   ftxui::Element render() const;
+  public:
+    Actor(Point const& point, char codepoint, ftxui::Color const& color);
+    ftxui::Element render() const;
 
-   Point m_point;
-   char m_codepoint;
-   ftxui::Color m_color;
+    Point m_point;
+    char m_codepoint;
+    ftxui::Color m_color;
 };
 
 // allows look up std::set by Point

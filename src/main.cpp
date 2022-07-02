@@ -1,6 +1,6 @@
-#include <ftxui/component/screen_interactive.hpp>
-#include <ftxui/component/component.hpp>  // Renderer
+#include <ftxui/component/component.hpp> // Renderer
 #include <ftxui/component/event.hpp>
+#include <ftxui/component/screen_interactive.hpp>
 
 #include "Point.hpp"
 #include "World.hpp"
@@ -15,12 +15,11 @@ int main()
     World world(playerStartingPosition, mapWidth, mapHeight);
 
     auto screen = ScreenInteractive::FitComponent();
-    auto renderer = Renderer([&world] {
-        return border(world.render());
-    });
+    auto renderer = Renderer([&world] { return border(world.render()); });
 
     auto component = CatchEvent(renderer, [&world, &screen](Event event) {
-        if (event == Event::Character('q')) {
+        if (event == Event::Character('q'))
+        {
             screen.ExitLoopClosure()();
             return true;
         }

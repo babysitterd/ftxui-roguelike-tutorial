@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Actor.hpp"
-#include "Point.hpp"
 #include "Map.hpp"
+#include "Point.hpp"
 
-#include <ftxui/dom/elements.hpp>
 #include <ftxui/component/event.hpp>
+#include <ftxui/dom/elements.hpp>
 
 #include <set>
 

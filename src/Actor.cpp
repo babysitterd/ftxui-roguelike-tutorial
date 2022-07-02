@@ -1,9 +1,8 @@
 #include "Actor.hpp"
 
-Actor::Actor(Point const& point, char codepoint, ftxui::Color const& color) :
-    m_point(point), m_codepoint(codepoint), m_color(color)
+Actor::Actor(Point const& point, char codepoint, ftxui::Color const& color)
+    : m_point(point), m_codepoint(codepoint), m_color(color)
 {
-
 }
 
 ftxui::Element Actor::render() const
