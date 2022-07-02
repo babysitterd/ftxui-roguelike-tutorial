@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
  
 # --- Fetch FTXUI --------------------------------------------------------------
 include(FetchContent)
- 
+
 set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE)
 FetchContent_Declare(ftxui
   GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
@@ -35,7 +35,7 @@ target_include_directories(ftxui-roguelike-tutorial PRIVATE src)
 target_link_libraries(ftxui-roguelike-tutorial
   PRIVATE ftxui::screen
   PRIVATE ftxui::dom
-  PRIVATE ftxui::component # Not needed for this example.
+  PRIVATE ftxui::component
 )
 
 if (EMSCRIPTEN)
@@ -46,4 +46,7 @@ if (EMSCRIPTEN)
   foreach(file "index.html" "run_webassembly.py")
     configure_file("src/${file}" ${file})
   endforeach(file)
+else()
+  enable_testing()
+  add_subdirectory(test)
 endif()
