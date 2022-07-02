@@ -1,19 +1,14 @@
 #pragma once
 
+#include "Entity.hpp"
 #include "Point.hpp"
 
-#include <ftxui/dom/elements.hpp>
-#include <ftxui/screen/color.hpp>
-
-class Actor
+class Actor : public Entity
 {
   public:
     Actor(Point const& point, char codepoint, ftxui::Color const& color);
-    ftxui::Element Render() const;
 
     Point m_point;
-    char m_codepoint;
-    ftxui::Color m_color;
 };
 
 // allows look up std::set by Point

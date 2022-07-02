@@ -8,7 +8,8 @@ Tile::Tile() : Tile(Tile::Create(Tile::Type::Floor))
 {
 }
 
-Tile::Tile(Tile::Type type, bool canWalk) : m_type(type), m_canWalk(canWalk)
+Tile::Tile(Tile::Type type, bool canWalk, char codepoint, ftxui::Color const& color)
+    : Entity(codepoint, color), m_type(type), m_canWalk(canWalk)
 {
 }
 
@@ -17,10 +18,11 @@ Tile Tile::Create(enum class Tile::Type type)
     switch (type)
     {
     case Type::Floor:
-        return Tile{type, true};
+        return Tile{type, true, '.', ftxui::Color{50, 50, 150}};
     case Type::Wall:
+        return Tile{type, false, '#', ftxui::Color::CadetBlue};
     case Type::Void:
-        return Tile{type, false};
+        return Tile{type, false, ' ', ftxui::Color::Black};
     default:
         throw std::invalid_argument{"Unknown Tile type"};
     }
@@ -59,15 +61,5 @@ void Map::setWall(Point const& point)
 
 ftxui::Element Map::Render(Point const& point) const
 {
-    static const ftxui::Color darkWall = ftxui::Color::CadetBlue;
-    static const ftxui::Color darkGround(50, 50, 150);
-
-    if (At(point).GetType() == Tile::Type::Wall)
-    {
-        return ftxui::text(std::string{'#'}) | ftxui::color(darkWall);
-    }
-    else
-    {
-        return ftxui::text(std::string{'.'}) | ftxui::color(darkGround);
-    }
+    return At(point).Render();
 }

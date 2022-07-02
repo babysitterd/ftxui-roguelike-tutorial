@@ -1,12 +1,13 @@
 #pragma once
 
+#include "Entity.hpp"
 #include "Point.hpp"
 
 #include <ftxui/dom/elements.hpp>
 
 #include <vector>
 
-class Tile
+class Tile : public Entity
 {
   public:
     enum class Type
@@ -23,7 +24,7 @@ class Tile
     bool CanWalk() const;
 
   private:
-    explicit Tile(Type type, bool canWalk);
+    explicit Tile(Type type, bool canWalk, char codepoint, ftxui::Color const& color);
 
     Type m_type;
     bool m_canWalk;

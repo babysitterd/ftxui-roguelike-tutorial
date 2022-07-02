@@ -27,6 +27,7 @@ project(ftxui-roguelike-tutorial
 add_executable(ftxui-roguelike-tutorial
   src/main.cpp
   src/Actor.cpp
+  src/Entity.cpp
   src/Map.cpp
   src/World.cpp
 )
