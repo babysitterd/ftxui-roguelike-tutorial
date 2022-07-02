@@ -2,7 +2,7 @@
 
 #include <ftxui/screen/color.hpp>
 
-#include <cassert>
+#include <stdexcept>
 
 Tile::Tile() : Tile(Tile::Create(Tile::Type::Floor))
 {
@@ -22,7 +22,7 @@ Tile Tile::Create(enum class Tile::Type type)
     case Type::Void:
         return Tile{type, false};
     default:
-        assert(false);
+        throw std::invalid_argument{"Unknown Tile type"};
     }
 }
 
@@ -42,15 +42,14 @@ Map::Map(int width, int height) : m_width(width), m_height(height), m_tiles(m_wi
     setWall({50, 22});
 }
 
-bool Map::isWall(Point const& point) const
+Tile const& Map::At(Point const& point) const
 {
-    auto const index = point.x + point.y * m_width;
-    if (index < 0 || index >= m_tiles.size())
-    {
-        return false;
-    }
+    return m_tiles[point.x + point.y * m_width];
+}
 
-    return m_tiles[index].GetType() == Tile::Type::Wall;
+bool Map::IsOutOfBounds(Point const& point) const
+{
+    return point.x < 0 || point.x >= m_width || point.y < 0 || point.y >= m_height;
 }
 
 void Map::setWall(Point const& point)
@@ -58,12 +57,12 @@ void Map::setWall(Point const& point)
     m_tiles[point.x + point.y * m_width] = Tile::Create(Tile::Type::Wall);
 }
 
-ftxui::Element Map::render(Point const& point) const
+ftxui::Element Map::Render(Point const& point) const
 {
     static const ftxui::Color darkWall = ftxui::Color::CadetBlue;
     static const ftxui::Color darkGround(50, 50, 150);
 
-    if (isWall(point))
+    if (At(point).GetType() == Tile::Type::Wall)
     {
         return ftxui::text(std::string{'#'}) | ftxui::color(darkWall);
     }

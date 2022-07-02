@@ -6,7 +6,7 @@ World::World(Point const& player_position, int mapWidth, int mapHeight)
     m_actors.emplace(Point{60, 13}, '@', ftxui::Color::Yellow);
 }
 
-ftxui::Element World::render() const
+ftxui::Element World::Render() const
 {
     ftxui::Elements world;
     world.reserve(m_map.m_height);
@@ -19,15 +19,15 @@ ftxui::Element World::render() const
             Point const current{j, i};
             if (current == m_player.m_point)
             {
-                row.push_back(m_player.render());
+                row.push_back(m_player.Render());
             }
             else if (auto it = m_actors.find(current); it != m_actors.end())
             {
-                row.push_back(it->render());
+                row.push_back(it->Render());
             }
             else
             {
-                row.push_back(m_map.render(current));
+                row.push_back(m_map.Render(current));
             }
         }
         world.push_back(ftxui::hbox(row));
@@ -38,7 +38,7 @@ ftxui::Element World::render() const
 bool World::EventHandler(ftxui::Event const& event)
 {
     auto rewind = [this, previous = m_player.m_point]() {
-        if (m_map.isWall(m_player.m_point))
+        if (m_map.IsOutOfBounds(m_player.m_point) || !m_map.At(m_player.m_point).CanWalk())
         {
             m_player.m_point = previous;
         }

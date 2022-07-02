@@ -9,7 +9,7 @@ class Actor
 {
   public:
     Actor(Point const& point, char codepoint, ftxui::Color const& color);
-    ftxui::Element render() const;
+    ftxui::Element Render() const;
 
     Point m_point;
     char m_codepoint;

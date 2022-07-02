@@ -34,10 +34,11 @@ class Map
   public:
     Map(int width, int height);
 
-    bool isWall(Point const& point) const;
     void setWall(Point const& point);
+    Tile const& At(Point const& point) const;
+    bool IsOutOfBounds(Point const& point) const;
 
-    ftxui::Element render(Point const& point) const;
+    ftxui::Element Render(Point const& point) const;
 
     int m_width;
     int m_height;

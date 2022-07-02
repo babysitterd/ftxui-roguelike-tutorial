@@ -5,7 +5,7 @@ Actor::Actor(Point const& point, char codepoint, ftxui::Color const& color)
 {
 }
 
-ftxui::Element Actor::render() const
+ftxui::Element Actor::Render() const
 {
     return ftxui::text(std::string{m_codepoint}) | ftxui::color(m_color);
 }

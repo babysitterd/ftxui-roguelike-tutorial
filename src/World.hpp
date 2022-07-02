@@ -13,7 +13,7 @@ struct World
 {
     World(Point const& playerPosition, int mapWidth, int mapHeight);
 
-    ftxui::Element render() const;
+    ftxui::Element Render() const;
 
     bool EventHandler(ftxui::Event const& event);
 

@@ -15,7 +15,7 @@ int main()
     World world(playerStartingPosition, mapWidth, mapHeight);
 
     auto screen = ScreenInteractive::FitComponent();
-    auto renderer = Renderer([&world] { return border(world.render()); });
+    auto renderer = Renderer([&world] { return border(world.Render()); });
 
     auto component = CatchEvent(renderer, [&world, &screen](Event event) {
         if (event == Event::Character('q'))
