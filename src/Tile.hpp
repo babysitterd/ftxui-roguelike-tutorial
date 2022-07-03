@@ -13,7 +13,7 @@ class Tile : public Entity
     };
 
     Tile();
-    static Tile Create(enum class Type type);
+    static Tile Create(Type type);
 
     Type GetType() const;
     bool CanWalk() const;

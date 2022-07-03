@@ -11,7 +11,7 @@ Tile::Tile(Tile::Type type, bool canWalk, char codepoint, ftxui::Color const& co
 {
 }
 
-Tile Tile::Create(enum class Tile::Type type)
+Tile Tile::Create(Tile::Type type)
 {
     switch (type)
     {
