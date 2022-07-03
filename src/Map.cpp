@@ -1,5 +1,7 @@
 #include "Map.hpp"
 
+#include "MapGenerator.hpp"
+
 #include <algorithm>
 
 #include <ftxui/screen/color.hpp>
