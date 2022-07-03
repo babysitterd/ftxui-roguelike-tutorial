@@ -1,47 +1,15 @@
 #include "Map.hpp"
 
+#include <algorithm>
+
 #include <ftxui/screen/color.hpp>
-
-#include <stdexcept>
-
-Tile::Tile() : Tile(Tile::Create(Tile::Type::Floor))
-{
-}
-
-Tile::Tile(Tile::Type type, bool canWalk, char codepoint, ftxui::Color const& color)
-    : Entity(codepoint, color), m_type(type), m_canWalk(canWalk)
-{
-}
-
-Tile Tile::Create(enum class Tile::Type type)
-{
-    switch (type)
-    {
-    case Type::Floor:
-        return Tile{type, true, '.', ftxui::Color{50, 50, 150}};
-    case Type::Wall:
-        return Tile{type, false, '#', ftxui::Color::CadetBlue};
-    case Type::Void:
-        return Tile{type, false, ' ', ftxui::Color::Black};
-    default:
-        throw std::invalid_argument{"Unknown Tile type"};
-    }
-}
-
-bool Tile::CanWalk() const
-{
-    return m_canWalk;
-}
-
-Tile::Type Tile::GetType() const
-{
-    return m_type;
-}
 
 Map::Map(int width, int height) : m_width(width), m_height(height), m_tiles(m_width * m_height)
 {
-    setWall({30, 22});
-    setWall({50, 22});
+    CarveRoom({20, 15, 10, 15});
+    CarveRoom({35, 15, 10, 15});
+
+    DigHorizontalTunnel(25, 40, 23);
 }
 
 Tile const& Map::At(Point const& point) const
@@ -54,9 +22,33 @@ bool Map::IsOutOfBounds(Point const& point) const
     return point.x < 0 || point.x >= m_width || point.y < 0 || point.y >= m_height;
 }
 
-void Map::setWall(Point const& point)
+void Map::CarveRoom(Room const& room)
 {
-    m_tiles[point.x + point.y * m_width] = Tile::Create(Tile::Type::Wall);
+    for (int i = room.m_northWest.x + 1; i < room.m_southEast.x; ++i)
+    {
+        for (int j = room.m_northWest.y; j < room.m_southEast.y; ++j)
+        {
+            m_tiles[i + j * m_width] = Tile::Create(Tile::Type::Floor);
+        }
+    }
+}
+
+void Map::DigHorizontalTunnel(int x1, int x2, int y)
+{
+    auto const [xfrom, xto] = std::minmax(x1, x2);
+    for (int i = xfrom; i <= xto; ++i)
+    {
+        m_tiles[i + y * m_width] = Tile::Create(Tile::Type::Floor);
+    }
+}
+
+void Map::DigVerticalTunnel(int y1, int y2, int x)
+{
+    auto const [yfrom, yto] = std::minmax(y1, y2);
+    for (int i = yfrom; i <= yto; ++i)
+    {
+        m_tiles[x + i * m_width] = Tile::Create(Tile::Type::Floor);
+    }
 }
 
 ftxui::Element Map::Render(Point const& point) const

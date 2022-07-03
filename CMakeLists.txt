@@ -29,6 +29,7 @@ add_executable(ftxui-roguelike-tutorial
   src/Actor.cpp
   src/Entity.cpp
   src/Map.cpp
+  src/Tile.cpp
   src/World.cpp
 )
 target_include_directories(ftxui-roguelike-tutorial PRIVATE src)
