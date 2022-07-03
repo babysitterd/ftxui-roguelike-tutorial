@@ -11,8 +11,7 @@ int main()
 
     int const mapWidth = 80;
     int const mapHeight = 45;
-    Point const playerStartingPosition{mapWidth / 2, mapHeight / 2};
-    World world(playerStartingPosition, mapWidth, mapHeight);
+    World world(mapWidth, mapHeight);
 
     auto screen = ScreenInteractive::FitComponent();
     auto renderer = Renderer([&world] { return border(world.Render()); });

@@ -6,10 +6,12 @@
 
 Map::Map(int width, int height) : m_width(width), m_height(height), m_tiles(m_width * m_height)
 {
-    CarveRoom({20, 15, 10, 15});
-    CarveRoom({35, 15, 10, 15});
+    constexpr int roomMaxSize = 10;
+    constexpr int roomMinSize = 6;
+    constexpr int maxRooms = 30;
 
-    DigHorizontalTunnel(25, 40, 23);
+    MapGenerator generator(width, height);
+    m_rooms = generator.Generate(roomMaxSize, roomMinSize, maxRooms, *this);
 }
 
 Tile const& Map::At(Point const& point) const

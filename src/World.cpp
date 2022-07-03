@@ -1,9 +1,8 @@
 #include "World.hpp"
 
-World::World(Point const& player_position, int mapWidth, int mapHeight)
-    : m_player(player_position, '@', ftxui::Color::White), m_map(mapWidth, mapHeight)
+World::World(int mapWidth, int mapHeight)
+    : m_map(mapWidth, mapHeight), m_player(m_map.m_rooms.front().Center(), '@', ftxui::Color::White)
 {
-    m_actors.emplace(Point{60, 13}, '@', ftxui::Color::Yellow);
 }
 
 ftxui::Element World::Render() const

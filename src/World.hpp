@@ -11,13 +11,13 @@
 
 struct World
 {
-    World(Point const& playerPosition, int mapWidth, int mapHeight);
+    World(int mapWidth, int mapHeight);
 
     ftxui::Element Render() const;
 
     bool EventHandler(ftxui::Event const& event);
 
-    Actor m_player;
     Map m_map;
+    Actor m_player;
     std::set<Actor, Compare> m_actors;
 };
