@@ -1,6 +1,5 @@
 #pragma once
 
-#include "IDigger.hpp"
 #include "Room.hpp"
 
 #include <random>
@@ -14,7 +13,8 @@ class MapGenerator
     {
     }
 
-    std::vector<Room> Generate(int roomMaxSize, int roomMinSize, int maxRooms, IDigger& digger)
+    template <class T>
+    std::vector<Room> Generate(int roomMaxSize, int roomMinSize, int maxRooms, T& digger)
     {
         std::vector<Room> rooms;
         for (int i = 0; i < maxRooms; ++i)

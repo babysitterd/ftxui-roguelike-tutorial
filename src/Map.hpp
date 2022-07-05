@@ -1,22 +1,22 @@
 #pragma once
 
 #include "Entity.hpp"
-#include "IDigger.hpp"
 #include "Point.hpp"
+#include "Room.hpp"
 #include "Tile.hpp"
 
 #include <ftxui/dom/elements.hpp>
 
 #include <vector>
 
-class Map : public IDigger
+class Map
 {
   public:
     Map(int width, int height);
 
-    void CarveRoom(Room const& room) override;
-    void DigHorizontalTunnel(int x1, int x2, int y) override;
-    void DigVerticalTunnel(int y1, int y2, int x) override;
+    void CarveRoom(Room const& room);
+    void DigHorizontalTunnel(int x1, int x2, int y);
+    void DigVerticalTunnel(int y1, int y2, int x);
 
     Tile const& At(Point const& point) const;
     bool IsOutOfBounds(Point const& point) const;
