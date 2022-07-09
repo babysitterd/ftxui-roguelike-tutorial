@@ -1,19 +1,16 @@
-#include <catch2/catch_test_macros.hpp>
+#include "ApprovalTests.hpp"
 
-static int Factorial(int number)
+#include <catch2/catch.hpp>
+
+TEST_CASE("catch2_starter sample")
 {
-    return number <= 1 ? number : Factorial(number - 1) * number; // fail
+    // TODO Replace 42 with the value or object whose contents you are verifying.
+    // For help, see:
+    // https://approvaltestscpp.readthedocs.io/en/latest/generated_docs/ToString.html
+    ApprovalTests::Approvals::verify(42);
 }
 
-TEST_CASE("Factorial of 0 is 1 (fail)", "[single-file]")
+TEST_CASE("simple")
 {
-    REQUIRE(Factorial(0) == 1);
-}
-
-TEST_CASE("Factorials of 1 and higher are computed (pass)", "[single-file]")
-{
-    REQUIRE(Factorial(1) == 1);
-    REQUIRE(Factorial(2) == 2);
-    REQUIRE(Factorial(3) == 6);
-    REQUIRE(Factorial(10) == 3628800);
+    REQUIRE(4 == 2 * 2);
 }
