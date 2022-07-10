@@ -60,7 +60,7 @@ else()
 
   add_executable(roguelike-tests
     test/main.cpp
-    test/example.cpp
+    test/MapTest.cpp
     ${ROGUELIKE_SOURCES}
   )
 

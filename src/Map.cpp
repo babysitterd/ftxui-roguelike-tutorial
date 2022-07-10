@@ -1,20 +1,9 @@
 #include "Map.hpp"
 
-#include "MapGenerator.hpp"
-
 #include <algorithm>
+#include <iostream>
 
 #include <ftxui/screen/color.hpp>
-
-Map::Map(int width, int height) : m_width(width), m_height(height), m_tiles(m_width * m_height)
-{
-    constexpr int roomMaxSize = 10;
-    constexpr int roomMinSize = 6;
-    constexpr int maxRooms = 30;
-
-    MapGenerator generator(width, height);
-    m_rooms = generator.Generate(roomMaxSize, roomMinSize, maxRooms, *this);
-}
 
 Tile const& Map::At(Point const& point) const
 {
@@ -58,4 +47,18 @@ void Map::DigVerticalTunnel(int y1, int y2, int x)
 ftxui::Element Map::Render(Point const& point) const
 {
     return At(point).Render();
+}
+
+std::ostream& operator<<(std::ostream& os, Map const& map)
+{
+    for (int y = 0; y < map.m_height; ++y)
+    {
+        for (int x = 0; x < map.m_width; ++x)
+        {
+            os << map.m_tiles[x + y * map.m_width].Codepoint();
+        }
+        os << '\n';
+    }
+    os << '\n';
+    return os;
 }

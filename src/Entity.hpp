@@ -9,9 +9,11 @@ class Entity
     Entity(char codepoint, ftxui::Color const& color);
     virtual ~Entity() = default;
 
+    char Codepoint() const;
+
     ftxui::Element Render() const;
 
-  protected:
+  private:
     char m_codepoint;
     ftxui::Color m_color;
 };

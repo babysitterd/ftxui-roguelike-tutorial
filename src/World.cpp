@@ -1,7 +1,20 @@
 #include "World.hpp"
 
+#include "MapGenerator.hpp"
+
+namespace
+{
+
+constexpr int RoomMaxSize = 10;
+constexpr int RoomMinSize = 6;
+constexpr int MaxRooms = 30;
+
+} // namespace
+
 World::World(int mapWidth, int mapHeight)
-    : m_map(mapWidth, mapHeight), m_player(m_map.m_rooms.front().Center(), '@', ftxui::Color::White)
+    : m_map(mapWidth, mapHeight,
+            MapGenerator{mapWidth, mapHeight, RoomMaxSize, RoomMinSize, MaxRooms}),
+      m_player(m_map.m_rooms.front().Center(), '@', ftxui::Color::White)
 {
 }
 

@@ -4,6 +4,11 @@ Entity::Entity(char codepoint, ftxui::Color const& color) : m_codepoint(codepoin
 {
 }
 
+char Entity::Codepoint() const
+{
+    return m_codepoint;
+}
+
 ftxui::Element Entity::Render() const
 {
     return ftxui::text(std::string{m_codepoint}) | ftxui::color(m_color);

@@ -7,20 +7,20 @@
 class MapGenerator
 {
   public:
-    MapGenerator(int width, int height,
+    MapGenerator(int width, int height, int roomMaxSize, int roomMinSize, int maxRooms,
                  std::random_device::result_type seed = std::random_device{}())
-        : m_mapWidth(width), m_mapHeight(height), m_generator(seed)
+        : m_mapWidth(width), m_mapHeight(height), m_roomMaxSize(roomMaxSize),
+          m_roomMinSize(roomMinSize), m_maxRooms(maxRooms), m_generator(seed)
     {
     }
 
-    template <class T>
-    std::vector<Room> Generate(int roomMaxSize, int roomMinSize, int maxRooms, T& digger)
+    template <class T> std::vector<Room> Generate(T& digger)
     {
         std::vector<Room> rooms;
-        for (int i = 0; i < maxRooms; ++i)
+        for (int i = 0; i < m_maxRooms; ++i)
         {
-            int const roomWidth = RandomInt(roomMinSize, roomMaxSize);
-            int const roomHeight = RandomInt(roomMinSize, roomMaxSize);
+            int const roomWidth = RandomInt(m_roomMinSize, m_roomMaxSize);
+            int const roomHeight = RandomInt(m_roomMinSize, m_roomMaxSize);
 
             int const x = RandomInt(0, m_mapWidth - roomWidth - 1);
             int const y = RandomInt(0, m_mapHeight - roomHeight - 1);
@@ -74,5 +74,8 @@ class MapGenerator
   private:
     int m_mapWidth;
     int m_mapHeight;
+    int m_roomMaxSize;
+    int m_roomMinSize;
+    int m_maxRooms;
     std::mt19937 m_generator;
 };

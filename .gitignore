@@ -5,6 +5,9 @@ out/
 cmake-build-*/
 conan-cache/
 
+# Approval Tests
+*.received.*
+
 # User spesific settings
 CMakeUserPresets.json
 
