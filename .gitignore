@@ -7,6 +7,7 @@ conan-cache/
 
 # Approval Tests
 *.received.*
+*.bak
 
 # User spesific settings
 CMakeUserPresets.json

@@ -14,6 +14,7 @@ class Tile : public Entity
 
     Tile();
     static Tile Create(Type type);
+    static Tile Create(char codepoint);
 
     Type GetType() const;
     bool CanWalk() const;

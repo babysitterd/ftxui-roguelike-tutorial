@@ -21,6 +21,8 @@ class Map
         m_rooms = generator.Generate(*this);
     }
 
+    explicit Map(std::vector<std::string> const& map);
+
     void CarveRoom(Room const& room);
     void DigHorizontalTunnel(int x1, int x2, int y);
     void DigVerticalTunnel(int y1, int y2, int x);

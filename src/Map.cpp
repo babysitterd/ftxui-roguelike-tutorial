@@ -5,6 +5,19 @@
 
 #include <ftxui/screen/color.hpp>
 
+Map::Map(std::vector<std::string> const& map)
+    : m_width(static_cast<int>(map.back().size())), m_height(static_cast<int>(map.size())),
+      m_tiles(m_width * m_height)
+{
+    for (int y = 0; y < m_height; ++y)
+    {
+        for (int x = 0; x < m_width; ++x)
+        {
+            m_tiles[x + y * m_width] = Tile::Create(map[y][x]);
+        }
+    }
+}
+
 Tile const& Map::At(Point const& point) const
 {
     return m_tiles[point.x + point.y * m_width];
