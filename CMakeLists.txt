@@ -27,6 +27,7 @@ project(ftxui-roguelike-tutorial
 set(ROGUELIKE_SOURCES
   src/Actor.cpp
   src/Entity.cpp
+  src/FovMap.cpp
   src/Map.cpp
   src/Tile.cpp
   src/World.cpp

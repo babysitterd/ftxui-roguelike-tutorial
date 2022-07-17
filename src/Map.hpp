@@ -21,6 +21,7 @@ class Map
         m_rooms = generator.Generate(*this);
     }
 
+    Map(int width, int height);
     explicit Map(std::vector<std::string> const& map);
 
     void CarveRoom(Room const& room);
@@ -32,6 +33,7 @@ class Map
 
     ftxui::Element Render(Point const& point) const;
 
+    virtual std::ostream& WriteToStream(std::ostream& os) const;
     friend std::ostream& operator<<(std::ostream& os, Map const& map);
 
     int m_width;

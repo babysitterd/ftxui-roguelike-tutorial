@@ -13,7 +13,7 @@ class Entity
 
     ftxui::Element Render() const;
 
-  private:
+  protected:
     char m_codepoint;
     ftxui::Color m_color;
 };

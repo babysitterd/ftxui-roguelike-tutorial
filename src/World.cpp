@@ -1,21 +1,10 @@
 #include "World.hpp"
 
-#include "MapGenerator.hpp"
-
-namespace
-{
-
-constexpr int RoomMaxSize = 10;
-constexpr int RoomMinSize = 6;
-constexpr int MaxRooms = 30;
-
-} // namespace
-
-World::World(int mapWidth, int mapHeight)
-    : m_map(mapWidth, mapHeight,
-            MapGenerator{mapWidth, mapHeight, RoomMaxSize, RoomMinSize, MaxRooms}),
+World::World(int mapWidth, int mapHeight, int fovRadius)
+    : m_map(mapWidth, mapHeight, fovRadius),
       m_player(m_map.m_rooms.front().Center(), '@', ftxui::Color::White)
 {
+    m_map.LineOfSight(m_player.m_point);
 }
 
 ftxui::Element World::Render() const
@@ -53,6 +42,10 @@ bool World::EventHandler(ftxui::Event const& event)
         if (m_map.IsOutOfBounds(m_player.m_point) || !m_map.At(m_player.m_point).CanWalk())
         {
             m_player.m_point = previous;
+        }
+        else
+        {
+            m_map.LineOfSight(m_player.m_point);
         }
     };
 

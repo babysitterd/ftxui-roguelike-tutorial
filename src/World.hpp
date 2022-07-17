@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Actor.hpp"
-#include "Map.hpp"
+#include "FovMap.hpp"
 #include "Point.hpp"
 
 #include <ftxui/component/event.hpp>
@@ -11,13 +11,13 @@
 
 struct World
 {
-    World(int mapWidth, int mapHeight);
+    World(int mapWidth, int mapHeight, int fovRadius);
 
     ftxui::Element Render() const;
 
     bool EventHandler(ftxui::Event const& event);
 
-    Map m_map;
+    FovMap m_map;
     Actor m_player;
     std::set<Actor, Compare> m_actors;
 };

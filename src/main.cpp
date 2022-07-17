@@ -11,7 +11,8 @@ int main()
 
     int const mapWidth = 80;
     int const mapHeight = 45;
-    World world(mapWidth, mapHeight);
+    int const fovRadius = 10;
+    World world(mapWidth, mapHeight, fovRadius);
 
     auto screen = ScreenInteractive::FitComponent();
     auto renderer = Renderer([&world] { return border(world.Render()); });
