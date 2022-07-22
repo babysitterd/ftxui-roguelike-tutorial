@@ -2,6 +2,7 @@
 
 #include "Map.hpp"
 #include "Point.hpp"
+#include "RNG.hpp"
 
 #include <iosfwd>
 #include <string>
@@ -11,7 +12,7 @@ class FovMap : public Map
 {
   public:
     FovMap(std::vector<std::string> const& map, int radius);
-    FovMap(int width, int height, int fovRadius);
+    FovMap(int width, int height, int fovRadius, RNG& rng);
 
     void LineOfSight(Point const& viewpoint);
 

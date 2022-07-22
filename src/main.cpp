@@ -10,7 +10,7 @@ int main()
     using namespace ftxui;
 
     int const mapWidth = 80;
-    int const mapHeight = 45;
+    int const mapHeight = 40;
     int const fovRadius = 10;
     World world(mapWidth, mapHeight, fovRadius);
 

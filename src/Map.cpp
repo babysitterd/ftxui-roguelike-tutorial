@@ -1,6 +1,6 @@
 #include "Map.hpp"
 
-#include "MapGenerator.hpp"
+#include "NaiveMapGenerator.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -16,9 +16,16 @@ constexpr int MaxRooms = 30;
 
 } // namespace
 
-Map::Map(int width, int height) : m_width(width), m_height(height), m_tiles(m_width * m_height)
+Map::Map(int width, int height, MapGeneratorBase& generator)
+    : m_width(width), m_height(height), m_tiles(m_width * m_height)
 {
-    MapGenerator generator(width, height, RoomMaxSize, RoomMinSize, MaxRooms);
+    m_rooms = generator.Generate(*this);
+}
+
+Map::Map(int width, int height, RNG& rng)
+    : m_width(width), m_height(height), m_tiles(m_width * m_height)
+{
+    NaiveMapGenerator generator(width, height, RoomMaxSize, RoomMinSize, MaxRooms, rng);
     m_rooms = generator.Generate(*this);
 }
 

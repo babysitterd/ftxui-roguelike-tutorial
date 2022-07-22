@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Entity.hpp"
+#include "IMapMutator.hpp"
+#include "MapGeneratorBase.hpp"
 #include "Point.hpp"
+#include "RNG.hpp"
 #include "Room.hpp"
 #include "Tile.hpp"
 
@@ -11,22 +14,16 @@
 #include <string>
 #include <vector>
 
-class Map
+class Map : public IMapMutator
 {
   public:
-    template <class T>
-    Map(int width, int height, T&& generator)
-        : m_width(width), m_height(height), m_tiles(m_width * m_height)
-    {
-        m_rooms = generator.Generate(*this);
-    }
-
-    Map(int width, int height);
+    Map(int width, int height, MapGeneratorBase& generator);
+    Map(int width, int height, RNG& rng);
     explicit Map(std::vector<std::string> const& map);
 
-    void CarveRoom(Room const& room);
-    void DigHorizontalTunnel(int x1, int x2, int y);
-    void DigVerticalTunnel(int y1, int y2, int x);
+    void CarveRoom(Room const& room) override;
+    void DigHorizontalTunnel(int x1, int x2, int y) override;
+    void DigVerticalTunnel(int y1, int y2, int x) override;
 
     Tile const& At(Point const& point) const;
     bool IsOutOfBounds(Point const& point) const;

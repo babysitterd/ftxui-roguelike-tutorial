@@ -1,7 +1,7 @@
 #include "World.hpp"
 
 World::World(int mapWidth, int mapHeight, int fovRadius)
-    : m_map(mapWidth, mapHeight, fovRadius),
+    : m_rng{}, m_map(mapWidth, mapHeight, fovRadius, m_rng),
       m_player(m_map.m_rooms.front().Center(), '@', ftxui::Color::White)
 {
     m_map.LineOfSight(m_player.m_point);
@@ -14,7 +14,9 @@ ftxui::Element World::Render() const
     for (int i = 0; i < m_map.m_height; ++i)
     {
         ftxui::Elements row;
-        row.reserve(m_map.m_width);
+        row.reserve(m_map.m_width + 1);
+        auto const line = (i < 10 ? " " : "") + std::to_string(i);
+        row.push_back(ftxui::text(std::string{line}) | ftxui::color(ftxui::Color::GrayLight));
         for (int j = 0; j < m_map.m_width; ++j)
         {
             Point const current{j, i};

@@ -3,8 +3,10 @@
 #include "Actor.hpp"
 #include "FovMap.hpp"
 #include "Point.hpp"
+#include "RNG.hpp"
 
 #include <ftxui/component/event.hpp>
+
 #include <ftxui/dom/elements.hpp>
 
 #include <set>
@@ -17,6 +19,7 @@ struct World
 
     bool EventHandler(ftxui::Event const& event);
 
+    RNG m_rng;
     FovMap m_map;
     Actor m_player;
     std::set<Actor, Compare> m_actors;

@@ -10,8 +10,8 @@ FovMap::FovMap(std::vector<std::string> const& map, int radius)
 {
 }
 
-FovMap::FovMap(int width, int height, int fovRadius)
-    : Map(width, height), m_light(m_tiles.size(), false), m_radius(fovRadius)
+FovMap::FovMap(int width, int height, int fovRadius, RNG& rng)
+    : Map(width, height, rng), m_light(m_tiles.size(), false), m_radius(fovRadius)
 {
 }
 
