@@ -13,10 +13,13 @@ class Actor : public Entity
         Troll
     };
 
-    Actor(Point const& point, char codepoint, ftxui::Color const& color);
+    Actor(Type type, Point const& point, char codepoint, ftxui::Color const& color);
 
     static Actor Create(Type type, Point const& point);
 
+    std::string Name() const;
+
+    Type m_type;
     Point m_point;
 };
 

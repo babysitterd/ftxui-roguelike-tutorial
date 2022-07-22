@@ -12,10 +12,11 @@ int main()
     int const mapWidth = 80;
     int const mapHeight = 40;
     int const fovRadius = 10;
+
     World world(mapWidth, mapHeight, fovRadius);
 
     auto screen = ScreenInteractive::FitComponent();
-    auto renderer = Renderer([&world] { return border(world.Render()); });
+    auto renderer = Renderer([&world] { return world.Render(); });
 
     auto component = CatchEvent(renderer, [&world, &screen](Event event) {
         if (event == Event::Character('q'))

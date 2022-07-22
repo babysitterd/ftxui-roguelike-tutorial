@@ -2,6 +2,9 @@
 
 #include "NaiveMapGenerator.hpp"
 
+#include <algorithm>
+#include <array>
+
 namespace
 {
 
@@ -18,6 +21,8 @@ World::World(int mapWidth, int mapHeight, int fovRadius)
       m_map(mapWidth, mapHeight, fovRadius, *m_generator),
       m_player(Actor::Create(Actor::Type::Player, m_map.m_rooms.front().Center()))
 {
+    m_messages.Add("WELCOME TO THE UNDERWORLD, TRAVELER. LET THE GAME BEGIN!");
+
     m_map.LineOfSight(m_player.m_point);
     // generate monsters
     for (auto const& room : m_map.m_rooms)
@@ -73,13 +78,51 @@ ftxui::Element World::Render() const
         }
         world.push_back(ftxui::hbox(row));
     }
-    return ftxui::vbox(world);
+
+    ftxui::Elements all;
+    all.push_back(ftxui::border(ftxui::vbox(world)));
+    all.push_back(ftxui::border(m_messages.Render()));
+    return ftxui::vbox(all);
 }
 
 bool World::EventHandler(ftxui::Event const& event)
 {
-    auto rewind = [this, previous = m_player.m_point]() {
-        if (m_map.IsOutOfBounds(m_player.m_point) || !m_map.At(m_player.m_point).CanWalk())
+    std::array<ftxui::Event, 4> const directions{ftxui::Event::ArrowUp, ftxui::Event::ArrowRight,
+                                                 ftxui::Event::ArrowDown, ftxui::Event::ArrowLeft};
+
+    if (std::find(directions.begin(), directions.end(), event) != directions.end())
+    {
+        auto const previous = m_player.m_point;
+
+        if (event == ftxui::Event::ArrowUp)
+        {
+            --m_player.m_point.y;
+        }
+
+        if (event == ftxui::Event::ArrowRight)
+        {
+            ++m_player.m_point.x;
+        }
+
+        if (event == ftxui::Event::ArrowDown)
+        {
+            ++m_player.m_point.y;
+        }
+
+        if (event == ftxui::Event::ArrowLeft)
+        {
+            --m_player.m_point.x;
+        }
+
+        auto toInteract = m_actors.find(m_player.m_point);
+        if (toInteract != m_actors.end())
+        {
+            Interact(m_player, *toInteract);
+        }
+
+        // rewind if the move was illigal
+        if (m_map.IsOutOfBounds(m_player.m_point) || !m_map.At(m_player.m_point).CanWalk() ||
+            toInteract != m_actors.end())
         {
             m_player.m_point = previous;
         }
@@ -87,35 +130,14 @@ bool World::EventHandler(ftxui::Event const& event)
         {
             m_map.LineOfSight(m_player.m_point);
         }
-    };
 
-    if (event == ftxui::Event::ArrowUp)
-    {
-        --m_player.m_point.y;
-        rewind();
-        return true;
-    }
-
-    if (event == ftxui::Event::ArrowRight)
-    {
-        ++m_player.m_point.x;
-        rewind();
-        return true;
-    }
-
-    if (event == ftxui::Event::ArrowDown)
-    {
-        ++m_player.m_point.y;
-        rewind();
-        return true;
-    }
-
-    if (event == ftxui::Event::ArrowLeft)
-    {
-        --m_player.m_point.x;
-        rewind();
         return true;
     }
 
     return false;
+}
+
+void World::Interact(Actor const& player, Actor const& other)
+{
+    m_messages.Add("You kick the " + other.Name() + ", much to its annoyance!");
 }

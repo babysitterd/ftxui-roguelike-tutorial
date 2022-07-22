@@ -3,6 +3,7 @@
 #include "Actor.hpp"
 #include "FovMap.hpp"
 #include "MapGeneratorBase.hpp"
+#include "MessageLog.hpp"
 #include "Point.hpp"
 #include "RNG.hpp"
 
@@ -19,10 +20,12 @@ struct World
     ftxui::Element Render() const;
 
     bool EventHandler(ftxui::Event const& event);
+    void Interact(Actor const& player, Actor const& other);
 
     RNG m_rng;
     std::unique_ptr<MapGeneratorBase> m_generator;
     FovMap m_map;
     Actor m_player;
     std::set<Actor, Compare> m_actors;
+    MessageLog m_messages;
 };
