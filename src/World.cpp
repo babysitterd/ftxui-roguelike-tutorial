@@ -1,7 +1,20 @@
 #include "World.hpp"
 
+#include "NaiveMapGenerator.hpp"
+
+namespace
+{
+
+constexpr int RoomMaxSize = 10;
+constexpr int RoomMinSize = 6;
+constexpr int MaxRooms = 30;
+
+} // namespace
+
 World::World(int mapWidth, int mapHeight, int fovRadius)
-    : m_rng{}, m_map(mapWidth, mapHeight, fovRadius, m_rng),
+    : m_rng{}, m_generator(std::make_unique<NaiveMapGenerator>(mapWidth, mapHeight, RoomMaxSize,
+                                                               RoomMinSize, MaxRooms, m_rng)),
+      m_map(mapWidth, mapHeight, fovRadius, *m_generator),
       m_player(m_map.m_rooms.front().Center(), '@', ftxui::Color::White)
 {
     m_map.LineOfSight(m_player.m_point);

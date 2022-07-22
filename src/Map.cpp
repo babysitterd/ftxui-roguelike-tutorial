@@ -1,31 +1,13 @@
 #include "Map.hpp"
 
-#include "NaiveMapGenerator.hpp"
-
 #include <algorithm>
 #include <iostream>
 
 #include <ftxui/screen/color.hpp>
 
-namespace
-{
-
-constexpr int RoomMaxSize = 10;
-constexpr int RoomMinSize = 6;
-constexpr int MaxRooms = 30;
-
-} // namespace
-
 Map::Map(int width, int height, MapGeneratorBase& generator)
     : m_width(width), m_height(height), m_tiles(m_width * m_height)
 {
-    m_rooms = generator.Generate(*this);
-}
-
-Map::Map(int width, int height, RNG& rng)
-    : m_width(width), m_height(height), m_tiles(m_width * m_height)
-{
-    NaiveMapGenerator generator(width, height, RoomMaxSize, RoomMinSize, MaxRooms, rng);
     m_rooms = generator.Generate(*this);
 }
 

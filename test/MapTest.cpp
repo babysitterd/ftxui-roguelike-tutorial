@@ -37,8 +37,15 @@ std::vector<std::string> const dungeon{
 
 TEST_CASE("MapGenerator")
 {
+    constexpr int MapWidth = 80;
+    constexpr int MapHeight = 45;
+    constexpr int RoomMaxSize = 10;
+    constexpr int RoomMinSize = 6;
+    constexpr int MaxRooms = 30;
+
     RNG rng(8'109'330);
-    Map map(80, 45, rng);
+    NaiveMapGenerator generator(MapWidth, MapHeight, RoomMaxSize, RoomMinSize, MaxRooms, rng);
+    Map map(MapWidth, MapHeight, generator);
     ApprovalTests::Approvals::verify(map);
 }
 

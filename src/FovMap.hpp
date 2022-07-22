@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Map.hpp"
+#include "MapGeneratorBase.hpp"
 #include "Point.hpp"
-#include "RNG.hpp"
 
 #include <iosfwd>
 #include <string>
@@ -12,7 +12,7 @@ class FovMap : public Map
 {
   public:
     FovMap(std::vector<std::string> const& map, int radius);
-    FovMap(int width, int height, int fovRadius, RNG& rng);
+    FovMap(int width, int height, int fovRadius, MapGeneratorBase& generator);
 
     void LineOfSight(Point const& viewpoint);
 

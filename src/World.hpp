@@ -2,6 +2,7 @@
 
 #include "Actor.hpp"
 #include "FovMap.hpp"
+#include "MapGeneratorBase.hpp"
 #include "Point.hpp"
 #include "RNG.hpp"
 
@@ -20,6 +21,7 @@ struct World
     bool EventHandler(ftxui::Event const& event);
 
     RNG m_rng;
+    std::unique_ptr<MapGeneratorBase> m_generator;
     FovMap m_map;
     Actor m_player;
     std::set<Actor, Compare> m_actors;

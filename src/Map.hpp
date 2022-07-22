@@ -4,7 +4,6 @@
 #include "IMapMutator.hpp"
 #include "MapGeneratorBase.hpp"
 #include "Point.hpp"
-#include "RNG.hpp"
 #include "Room.hpp"
 #include "Tile.hpp"
 
@@ -18,7 +17,6 @@ class Map : public IMapMutator
 {
   public:
     Map(int width, int height, MapGeneratorBase& generator);
-    Map(int width, int height, RNG& rng);
     explicit Map(std::vector<std::string> const& map);
 
     void CarveRoom(Room const& room) override;
