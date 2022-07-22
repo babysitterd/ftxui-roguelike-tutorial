@@ -8,16 +8,16 @@ namespace Color
 namespace Dark
 {
 
-const ftxui::Color Floor{50, 50, 150};
-const ftxui::Color Wall{0, 0, 100};
+const ftxui::Color Floor{ftxui::Color::Cyan2};
+const ftxui::Color Wall{0, 128, 128};
 
 } // namespace Dark
 
 namespace Light
 {
 
-const ftxui::Color Floor{200, 180, 50};
-const ftxui::Color Wall{130, 110, 50};
+const ftxui::Color Floor{ftxui::Color::Yellow2};
+const ftxui::Color Wall{ftxui::Color::Yellow1};
 
 } // namespace Light
 

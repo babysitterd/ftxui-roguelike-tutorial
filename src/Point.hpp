@@ -6,9 +6,8 @@ struct Point
 {
     int x = 0;
     int y = 0;
-    // Whoaa SPACESHIP is here!
-    auto operator<=>(Point const&) const = default;
 
+    Point() = default;
     Point(int _x, int _y) : x(_x), y(_y)
     {
     }
@@ -18,4 +17,7 @@ struct Point
 
     Point(Point&&) = default;
     Point& operator=(Point&&) = default;
+
+    // Whoaa SPACESHIP is here!
+    auto operator<=>(Point const&) const = default;
 };

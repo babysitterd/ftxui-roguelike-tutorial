@@ -6,7 +6,16 @@
 class Actor : public Entity
 {
   public:
+    enum class Type
+    {
+        Player,
+        Orc,
+        Troll
+    };
+
     Actor(Point const& point, char codepoint, ftxui::Color const& color);
+
+    static Actor Create(Type type, Point const& point);
 
     Point m_point;
 };
