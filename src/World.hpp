@@ -11,21 +11,23 @@
 
 #include <ftxui/dom/elements.hpp>
 
-#include <set>
+#include <vector>
 
-struct World
+class World
 {
+  public:
     World(int mapWidth, int mapHeight, int fovRadius);
 
     ftxui::Element Render() const;
 
     bool EventHandler(ftxui::Event const& event);
-    void Interact(Actor const& player, Actor const& other);
+    void Interact(Actor& player, Actor& other);
 
+  private:
     RNG m_rng;
     std::unique_ptr<MapGeneratorBase> m_generator;
     FovMap m_map;
     Actor m_player;
-    std::set<Actor, Compare> m_actors;
+    std::vector<Actor> m_actors;
     MessageLog m_messages;
 };

@@ -13,6 +13,12 @@ constexpr int RoomMinSize = 6;
 constexpr int MaxRooms = 30;
 constexpr int MaxMonstersPerRoom = 2;
 
+template <class T> auto FindActorAt(T& actors, Point const& point)
+{
+    return std::find_if(actors.begin(), actors.end(),
+                        [&point](Actor const& x) { return x.m_point == point; });
+}
+
 } // namespace
 
 World::World(int mapWidth, int mapHeight, int fovRadius)
@@ -35,15 +41,15 @@ World::World(int mapWidth, int mapHeight, int fovRadius)
             {
                 whereTo = Point(m_rng.RandomInt(room.m_northWest.x + 1, room.m_southEast.x - 1),
                                 m_rng.RandomInt(room.m_northWest.y + 1, room.m_southEast.y - 1));
-            } while (m_actors.contains(whereTo));
+            } while (FindActorAt(m_actors, whereTo) != m_actors.end());
 
             if (m_rng.RandomInt(0, 100) < 80)
             {
-                m_actors.insert(Actor::Create(Actor::Type::Orc, whereTo));
+                m_actors.push_back(Actor::Create(Actor::Type::Orc, whereTo));
             }
             else
             {
-                m_actors.insert(Actor::Create(Actor::Type::Troll, whereTo));
+                m_actors.push_back(Actor::Create(Actor::Type::Troll, whereTo));
             }
         }
     }
@@ -67,7 +73,7 @@ ftxui::Element World::Render() const
             {
                 row.push_back(m_player.Render());
             }
-            else if (auto it = m_actors.find(current); it != m_actors.end() && isLit)
+            else if (auto it = FindActorAt(m_actors, current); it != m_actors.end() && isLit)
             {
                 row.push_back(it->Render());
             }
@@ -114,7 +120,7 @@ bool World::EventHandler(ftxui::Event const& event)
             --m_player.m_point.x;
         }
 
-        auto toInteract = m_actors.find(m_player.m_point);
+        auto toInteract = FindActorAt(m_actors, m_player.m_point);
         if (toInteract != m_actors.end())
         {
             Interact(m_player, *toInteract);
@@ -137,7 +143,7 @@ bool World::EventHandler(ftxui::Event const& event)
     return false;
 }
 
-void World::Interact(Actor const& player, Actor const& other)
+void World::Interact(Actor& player, Actor& other)
 {
     m_messages.Add("You kick the " + other.Name() + ", much to its annoyance!");
 }
