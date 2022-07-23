@@ -9,8 +9,9 @@ int main()
 {
     using namespace ftxui;
 
-    int const mapWidth = 80;
-    int const mapHeight = 40;
+    // web vesrion of the terminal window by default is 43 lines only
+    int const mapWidth = 90;
+    int const mapHeight = 30;
     int const fovRadius = 10;
 
     World world(mapWidth, mapHeight, fovRadius);
