@@ -21,7 +21,7 @@ class World
     ftxui::Element Render() const;
 
     bool EventHandler(ftxui::Event const& event);
-    void Interact(Actor& player, Actor& other);
+    void Interact(Actor& first, Actor& second);
 
   private:
     RNG m_rng;

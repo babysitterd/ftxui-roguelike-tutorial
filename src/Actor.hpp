@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Entity.hpp"
+#include "Fighter.hpp"
 #include "Point.hpp"
 
 class Actor : public Entity
@@ -13,14 +14,19 @@ class Actor : public Entity
         Troll
     };
 
-    Actor(Type type, Point const& point, char codepoint, ftxui::Color const& color);
+    Actor(Type type, Point const& point, char codepoint, ftxui::Color const& color,
+          Fighter const& fighter);
 
     static Actor Create(Type type, Point const& point);
 
     std::string Name() const;
 
+    void Die();
+    bool IsDead() const;
+
     Type m_type;
     Point m_point;
+    Fighter m_fighter;
 };
 
 // allows look up std::set by Point

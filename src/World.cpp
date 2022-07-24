@@ -2,6 +2,8 @@
 
 #include "NaiveMapGenerator.hpp"
 
+#include <format>
+
 #include <algorithm>
 #include <array>
 
@@ -19,6 +21,31 @@ template <class T> auto FindActorAt(T& actors, Point const& point)
                         [&point](Actor const& x) { return x.m_point == point; });
 }
 
+Point NextStep(Point const& from, Point const& to)
+{
+    Point result(from);
+
+    int const dx = std::abs(to.x - from.x);
+    int const sx = from.x < to.x ? 1 : -1;
+    int const dy = (-1) * std::abs(to.y - from.y);
+    int const sy = from.y < to.y ? 1 : -1;
+    int error = dx + dy;
+
+    if (2 * error >= dy)
+    {
+        error += dy;
+        result.x += sx;
+    }
+
+    if (2 * error <= dx)
+    {
+        error += dx;
+        result.y += sy;
+    }
+
+    return result;
+}
+
 } // namespace
 
 World::World(int mapWidth, int mapHeight, int fovRadius)
@@ -27,7 +54,8 @@ World::World(int mapWidth, int mapHeight, int fovRadius)
       m_map(mapWidth, mapHeight, fovRadius, *m_generator),
       m_player(Actor::Create(Actor::Type::Player, m_map.m_rooms.front().Center()))
 {
-    m_messages.Add("WELCOME TO THE UNDERWORLD, TRAVELER. LET THE GAME BEGIN!");
+    m_messages.Add("WELCOME TO THE UNDERWORLD, TRAVELER. LET THE GAME BEGIN!",
+                   ftxui::Color::Aquamarine3);
 
     m_map.LineOfSight(m_player.m_point);
     // generate monsters
@@ -93,48 +121,75 @@ ftxui::Element World::Render() const
 
 bool World::EventHandler(ftxui::Event const& event)
 {
-    std::array<ftxui::Event, 4> const directions{ftxui::Event::ArrowUp, ftxui::Event::ArrowRight,
-                                                 ftxui::Event::ArrowDown, ftxui::Event::ArrowLeft};
+    std::array<ftxui::Event, 5> const actions{ftxui::Event::ArrowUp, ftxui::Event::ArrowRight,
+                                              ftxui::Event::ArrowDown, ftxui::Event::ArrowLeft,
+                                              ftxui::Event::Character(' ') /* wait */};
 
-    if (std::find(directions.begin(), directions.end(), event) != directions.end())
+    if (std::find(actions.begin(), actions.end(), event) != actions.end())
     {
-        auto const previous = m_player.m_point;
-
-        if (event == ftxui::Event::ArrowUp)
+        // player makes a move
+        if (event != ftxui::Event::Character(' '))
         {
-            --m_player.m_point.y;
+            auto const previous = m_player.m_point;
+
+            if (event == ftxui::Event::ArrowUp)
+            {
+                --m_player.m_point.y;
+            }
+
+            if (event == ftxui::Event::ArrowRight)
+            {
+                ++m_player.m_point.x;
+            }
+
+            if (event == ftxui::Event::ArrowDown)
+            {
+                ++m_player.m_point.y;
+            }
+
+            if (event == ftxui::Event::ArrowLeft)
+            {
+                --m_player.m_point.x;
+            }
+
+            auto toInteract = FindActorAt(m_actors, m_player.m_point);
+            auto const isAlive = toInteract != m_actors.end() && !toInteract->IsDead();
+            if (isAlive)
+            {
+                Interact(m_player, *toInteract);
+            }
+
+            // rewind if the move was illigal
+            if (m_map.IsOutOfBounds(m_player.m_point) || !m_map.At(m_player.m_point).CanWalk() ||
+                isAlive)
+            {
+                m_player.m_point = previous;
+            }
+            else
+            {
+                m_map.LineOfSight(m_player.m_point);
+            }
         }
 
-        if (event == ftxui::Event::ArrowRight)
+        // world takes turn
+        for (auto& actor : m_actors)
         {
-            ++m_player.m_point.x;
-        }
+            if (actor.IsDead())
+            {
+                continue;
+            }
 
-        if (event == ftxui::Event::ArrowDown)
-        {
-            ++m_player.m_point.y;
-        }
+            auto const delta = std::abs(actor.m_point.x - m_player.m_point.x) +
+                               std::abs(actor.m_point.y - m_player.m_point.y);
 
-        if (event == ftxui::Event::ArrowLeft)
-        {
-            --m_player.m_point.x;
-        }
-
-        auto toInteract = FindActorAt(m_actors, m_player.m_point);
-        if (toInteract != m_actors.end())
-        {
-            Interact(m_player, *toInteract);
-        }
-
-        // rewind if the move was illigal
-        if (m_map.IsOutOfBounds(m_player.m_point) || !m_map.At(m_player.m_point).CanWalk() ||
-            toInteract != m_actors.end())
-        {
-            m_player.m_point = previous;
-        }
-        else
-        {
-            m_map.LineOfSight(m_player.m_point);
+            if (delta == 1)
+            {
+                Interact(actor, m_player);
+            }
+            else if (m_map.m_light[actor.m_point.x + actor.m_point.y * m_map.m_width])
+            {
+                actor.m_point = NextStep(actor.m_point, m_player.m_point);
+            }
         }
 
         return true;
@@ -143,7 +198,32 @@ bool World::EventHandler(ftxui::Event const& event)
     return false;
 }
 
-void World::Interact(Actor& player, Actor& other)
+void World::Interact(Actor& first, Actor& second)
 {
-    m_messages.Add("You kick the " + other.Name() + ", much to its annoyance!");
+    int const damage = first.m_fighter.m_power - second.m_fighter.m_defense;
+
+    std::string const description = std::format("{} attacks {}", first.Name(), second.Name());
+    if (damage > 0)
+    {
+        second.m_fighter.SetHitpoints(second.m_fighter.m_hpCurrent - damage);
+        if (second.m_fighter.m_hpCurrent == 0)
+        {
+            m_messages.Add(std::format("{} for {} hit points. {} is dead!", description, damage,
+                                       second.Name()),
+                           ftxui::Color::Red1);
+            second.Die();
+        }
+        else
+        {
+            m_messages.Add(std::format("{} for {} hit points. ({}/{})", description, damage,
+                                       second.m_fighter.m_hpCurrent, second.m_fighter.m_hpFull),
+                           ftxui::Color::Red1);
+        }
+    }
+    else
+    {
+        m_messages.Add(std::format("{} but does no damage. ({}/{})", description,
+                                   second.m_fighter.m_hpCurrent, second.m_fighter.m_hpFull),
+                       ftxui::Color::Red1);
+    }
 }

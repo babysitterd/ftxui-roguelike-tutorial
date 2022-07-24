@@ -14,10 +14,10 @@ struct MessageLog
     {
     }
 
-    void Add(std::string const& message)
+    void Add(std::string const& message, ftxui::Color color)
     {
         m_data.pop_front();
-        m_data.push_back(message);
+        m_data.emplace_back(message, color);
     }
 
     ftxui::Element Render() const
@@ -26,11 +26,12 @@ struct MessageLog
         messages.reserve(m_data.size());
         for (auto it = m_data.crbegin(); it != m_data.crend(); ++it)
         {
-            messages.push_back(ftxui::text(*it) | ftxui::color(ftxui::Color::Aquamarine1));
+            auto const& [text, color] = *it;
+            messages.push_back(ftxui::text(text) | ftxui::color(color));
         }
 
         return ftxui::vbox(messages);
     }
 
-    std::list<std::string> m_data;
+    std::list<std::pair<std::string, ftxui::Color>> m_data;
 };
