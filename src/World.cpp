@@ -127,6 +127,11 @@ bool World::EventHandler(ftxui::Event const& event)
 
     if (std::find(actions.begin(), actions.end(), event) != actions.end())
     {
+        if (m_player.IsDead())
+        {
+            return false;
+        }
+
         // player makes a move
         if (event != ftxui::Event::Character(' '))
         {
@@ -190,6 +195,11 @@ bool World::EventHandler(ftxui::Event const& event)
             {
                 actor.m_point = NextStep(actor.m_point, m_player.m_point);
             }
+        }
+
+        if (m_player.IsDead())
+        {
+            m_messages.Add("GAME OVER ☠", ftxui::Color::Yellow1);
         }
 
         return true;

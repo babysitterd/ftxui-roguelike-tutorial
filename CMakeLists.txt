@@ -40,9 +40,6 @@ add_executable(roguelike-tutorial
 
 target_include_directories(roguelike-tutorial PRIVATE src)
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
-
 target_link_libraries(roguelike-tutorial
   PRIVATE ${CONAN_LIBS}
   PRIVATE ftxui::screen
@@ -66,6 +63,9 @@ else()
     test/MapTest.cpp
     ${ROGUELIKE_SOURCES}
   )
+
+  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+  conan_basic_setup()
 
   list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
   include(CTest)
