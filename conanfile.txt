@@ -1,6 +1,10 @@
 [requires]
 catch2/2.13.9
 approvaltests.cpp/10.12.2
+fmt/9.0.0
 
 [generators]
 cmake
+
+[options]
+fmt:header_only=True

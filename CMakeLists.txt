@@ -24,6 +24,9 @@ project(ftxui-roguelike-tutorial
   VERSION 1.0.0
 )
 
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
+
 set(ROGUELIKE_SOURCES
   src/Actor.cpp
   src/Entity.cpp
@@ -63,10 +66,6 @@ else()
     test/MapTest.cpp
     ${ROGUELIKE_SOURCES}
   )
-
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  conan_basic_setup()
-
   list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
   include(CTest)
   include(Catch)

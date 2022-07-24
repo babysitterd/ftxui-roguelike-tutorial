@@ -2,7 +2,7 @@
 
 #include "NaiveMapGenerator.hpp"
 
-#include <format>
+#include <fmt/core.h>
 
 #include <algorithm>
 #include <array>
@@ -212,27 +212,27 @@ void World::Interact(Actor& first, Actor& second)
 {
     int const damage = first.m_fighter.m_power - second.m_fighter.m_defense;
 
-    std::string const description = std::format("{} attacks {}", first.Name(), second.Name());
+    std::string const description = fmt::format("{} attacks {}", first.Name(), second.Name());
     if (damage > 0)
     {
         second.m_fighter.SetHitpoints(second.m_fighter.m_hpCurrent - damage);
         if (second.m_fighter.m_hpCurrent == 0)
         {
-            m_messages.Add(std::format("{} for {} hit points. {} is dead!", description, damage,
+            m_messages.Add(fmt::format("{} for {} hit points. {} is dead!", description, damage,
                                        second.Name()),
                            ftxui::Color::Red1);
             second.Die();
         }
         else
         {
-            m_messages.Add(std::format("{} for {} hit points. ({}/{})", description, damage,
+            m_messages.Add(fmt::format("{} for {} hit points. ({}/{})", description, damage,
                                        second.m_fighter.m_hpCurrent, second.m_fighter.m_hpFull),
                            ftxui::Color::Red1);
         }
     }
     else
     {
-        m_messages.Add(std::format("{} but does no damage. ({}/{})", description,
+        m_messages.Add(fmt::format("{} but does no damage. ({}/{})", description,
                                    second.m_fighter.m_hpCurrent, second.m_fighter.m_hpFull),
                        ftxui::Color::Red1);
     }
