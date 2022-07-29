@@ -15,6 +15,20 @@ constexpr int RoomMinSize = 6;
 constexpr int MaxRooms = 30;
 constexpr int MaxMonstersPerRoom = 2;
 
+namespace Color
+{
+
+auto const PlayerAttack = ftxui::Color(0xE0, 0xE0, 0xE0);
+auto const EnemyAttack = ftxui::Color(0xFF, 0xC0, 0xC0);
+auto const PlayerDie = ftxui::Color(0xFF, 0x30, 0x30);
+auto const EnemyDie = ftxui::Color(0xFF, 0xA0, 0x30);
+auto const WelcomeText = ftxui::Color(0x20, 0xA0, 0xFF);
+auto const BarText = ftxui::Color::White;
+auto const BarFilled = ftxui::Color(0x0, 0x60, 0x0);
+auto const BarEmpty = ftxui::Color(0x40, 0x10, 0x10);
+
+} // namespace Color
+
 template <class T> auto FindActorAt(T& actors, Point const& point)
 {
     return std::find_if(actors.begin(), actors.end(),
@@ -54,8 +68,7 @@ World::World(int mapWidth, int mapHeight, int fovRadius)
       m_map(mapWidth, mapHeight, fovRadius, *m_generator),
       m_player(Actor::Create(Actor::Type::Player, m_map.m_rooms.front().Center()))
 {
-    m_messages.Add("WELCOME TO THE UNDERWORLD, TRAVELER. LET THE GAME BEGIN!",
-                   ftxui::Color::Aquamarine3);
+    m_messages.Add("WELCOME TO THE UNDERWORLD, TRAVELER. LET THE GAME BEGIN!", Color::WelcomeText);
 
     m_map.LineOfSight(m_player.m_point);
     // generate monsters
@@ -113,9 +126,26 @@ ftxui::Element World::Render() const
         world.push_back(ftxui::hbox(row));
     }
 
+    // stats pane
+    ftxui::Elements stats(m_messages.m_data.size(), ftxui::text(std::string("")));
+    // lifebar
+    std::string const label =
+        fmt::format("HP: {:>3}/{:<3}", m_player.m_fighter.m_hpCurrent, m_player.m_fighter.m_hpFull);
+    auto lifebar = ftxui::hbox(ftxui::Elements{
+        ftxui::text(label) | ftxui::color(Color::BarText),
+        ftxui::text(std::string(m_player.m_fighter.m_hpCurrent, ' ')) |
+            ftxui::bgcolor(Color::BarFilled),
+        ftxui::text(
+            std::string(m_player.m_fighter.m_hpFull - m_player.m_fighter.m_hpCurrent, ' ')) |
+            ftxui::bgcolor(Color::BarEmpty)
+
+    });
+    stats[0] = lifebar;
+
     ftxui::Elements all;
     all.push_back(ftxui::border(ftxui::vbox(world)));
-    all.push_back(ftxui::border(m_messages.Render()));
+    all.push_back(ftxui::hbox(ftxui::Elements{ftxui::border(ftxui::vbox(stats)),
+                                              ftxui::border(m_messages.Render()) | ftxui::flex}));
     return ftxui::vbox(all);
 }
 
@@ -199,7 +229,7 @@ bool World::EventHandler(ftxui::Event const& event)
 
         if (m_player.IsDead())
         {
-            m_messages.Add("GAME OVER ☠", ftxui::Color::Yellow1);
+            m_messages.Add("GAME OVER ☠", ftxui::Color::Red1);
         }
 
         return true;
@@ -220,20 +250,23 @@ void World::Interact(Actor& first, Actor& second)
         {
             m_messages.Add(fmt::format("{} for {} hit points. {} is dead!", description, damage,
                                        second.Name()),
-                           ftxui::Color::Red1);
+                           second.m_type == Actor::Type::Player ? Color::PlayerDie
+                                                                : Color::EnemyDie);
             second.Die();
         }
         else
         {
             m_messages.Add(fmt::format("{} for {} hit points. ({}/{})", description, damage,
                                        second.m_fighter.m_hpCurrent, second.m_fighter.m_hpFull),
-                           ftxui::Color::Red1);
+                           first.m_type == Actor::Type::Player ? Color::PlayerAttack
+                                                               : Color::EnemyAttack);
         }
     }
     else
     {
         m_messages.Add(fmt::format("{} but does no damage. ({}/{})", description,
                                    second.m_fighter.m_hpCurrent, second.m_fighter.m_hpFull),
-                       ftxui::Color::Red1);
+                       first.m_type == Actor::Type::Player ? Color::PlayerAttack
+                                                           : Color::EnemyAttack);
     }
 }

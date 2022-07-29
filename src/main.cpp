@@ -10,7 +10,7 @@ int main()
     using namespace ftxui;
 
     // web vesrion of the terminal window by default is 43 lines only
-    int const mapWidth = 90;
+    int const mapWidth = 110;
     int const mapHeight = 30;
     int const fovRadius = 10;
 
