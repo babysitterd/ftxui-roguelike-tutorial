@@ -10,6 +10,24 @@ class Fighter
     {
     }
 
+    int Heal(int amount)
+    {
+        auto const current = m_hpCurrent;
+        SetHitpoints(current + amount);
+        return m_hpCurrent - current;
+    }
+
+    void TakeDamage(int amount)
+    {
+        SetHitpoints(m_hpCurrent - amount);
+    }
+
+    int m_hpFull;
+    int m_hpCurrent;
+    int m_defense;
+    int m_power;
+
+  private:
     void SetHitpoints(int hp)
     {
         if (hp < 0)
@@ -25,9 +43,4 @@ class Fighter
             m_hpCurrent = hp;
         }
     }
-
-    int m_hpFull;
-    int m_hpCurrent;
-    int m_defense;
-    int m_power;
 };

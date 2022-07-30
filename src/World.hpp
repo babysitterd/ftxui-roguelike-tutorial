@@ -13,6 +13,12 @@
 
 #include <vector>
 
+enum class Tab
+{
+    Game,
+    Messages
+};
+
 class World
 {
   public:
@@ -30,4 +36,6 @@ class World
     Actor m_player;
     std::vector<Actor> m_actors;
     MessageLog m_messages;
+    Tab m_current = Tab::Game;
+    std::size_t m_focusedMessage;
 };

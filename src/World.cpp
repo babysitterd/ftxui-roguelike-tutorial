@@ -45,14 +45,15 @@ Point NextStep(Point const& from, Point const& to)
     int const sy = from.y < to.y ? 1 : -1;
     int error = dx + dy;
 
-    if (2 * error >= dy)
+    if (2 * error - dy > dx - 2 * error)
     {
+        // horizontal step
         error += dy;
         result.x += sx;
     }
-
-    if (2 * error <= dx)
+    else
     {
+        // vertical step
         error += dx;
         result.y += sy;
     }
@@ -98,14 +99,21 @@ World::World(int mapWidth, int mapHeight, int fovRadius)
 
 ftxui::Element World::Render() const
 {
+    if (m_current == Tab::Messages)
+    {
+        return ftxui::window(ftxui::text("[  Message history  ]") | ftxui::center,
+                             m_messages.RenderAll(m_focusedMessage) | ftxui::vscroll_indicator |
+                                 ftxui::frame |
+                                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height) |
+                                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width));
+    }
+
     ftxui::Elements world;
     world.reserve(m_map.m_height);
     for (int i = 0; i < m_map.m_height; ++i)
     {
         ftxui::Elements row;
-        row.reserve(m_map.m_width + 1);
-        auto const line = (i < 10 ? " " : "") + std::to_string(i);
-        row.push_back(ftxui::text(std::string{line}) | ftxui::color(ftxui::Color::GrayLight));
+        row.reserve(m_map.m_width);
         for (int j = 0; j < m_map.m_width; ++j)
         {
             Point const current{j, i};
@@ -127,7 +135,8 @@ ftxui::Element World::Render() const
     }
 
     // stats pane
-    ftxui::Elements stats(m_messages.m_data.size(), ftxui::text(std::string("")));
+    constexpr std::size_t displayed = 5;
+    ftxui::Elements stats(displayed, ftxui::text(std::string("")));
     // lifebar
     std::string const label =
         fmt::format("HP: {:>3}/{:<3}", m_player.m_fighter.m_hpCurrent, m_player.m_fighter.m_hpFull);
@@ -144,18 +153,47 @@ ftxui::Element World::Render() const
 
     ftxui::Elements all;
     all.push_back(ftxui::border(ftxui::vbox(world)));
-    all.push_back(ftxui::hbox(ftxui::Elements{ftxui::border(ftxui::vbox(stats)),
-                                              ftxui::border(m_messages.Render()) | ftxui::flex}));
+    all.push_back(
+        ftxui::hbox(ftxui::Elements{ftxui::border(ftxui::vbox(stats)),
+                                    ftxui::border(m_messages.Render(displayed)) | ftxui::flex}));
     return ftxui::vbox(all);
 }
 
 bool World::EventHandler(ftxui::Event const& event)
 {
+    if (event == ftxui::Event::Character('v'))
+    {
+        if (m_current == Tab::Game)
+        {
+            m_current = Tab::Messages;
+            m_focusedMessage = m_messages.m_data.size() - 1;
+        }
+        else if (m_current == Tab::Messages)
+        {
+            m_current = Tab::Game;
+        }
+
+        return true;
+    }
+
+    if (m_current == Tab::Messages)
+    {
+        if (event == ftxui::Event::ArrowUp && m_focusedMessage != 0)
+        {
+            --m_focusedMessage;
+        }
+
+        if (event == ftxui::Event::ArrowDown && m_focusedMessage != m_messages.m_data.size() - 1)
+        {
+            ++m_focusedMessage;
+        }
+    }
+
     std::array<ftxui::Event, 5> const actions{ftxui::Event::ArrowUp, ftxui::Event::ArrowRight,
                                               ftxui::Event::ArrowDown, ftxui::Event::ArrowLeft,
                                               ftxui::Event::Character(' ') /* wait */};
 
-    if (std::find(actions.begin(), actions.end(), event) != actions.end())
+    if (m_current == Tab::Game && std::find(actions.begin(), actions.end(), event) != actions.end())
     {
         if (m_player.IsDead())
         {
@@ -223,7 +261,11 @@ bool World::EventHandler(ftxui::Event const& event)
             }
             else if (m_map.m_light[actor.m_point.x + actor.m_point.y * m_map.m_width])
             {
-                actor.m_point = NextStep(actor.m_point, m_player.m_point);
+                auto const next = NextStep(actor.m_point, m_player.m_point);
+                if (m_map.At(next).CanWalk())
+                {
+                    actor.m_point = next;
+                }
             }
         }
 
@@ -240,12 +282,17 @@ bool World::EventHandler(ftxui::Event const& event)
 
 void World::Interact(Actor& first, Actor& second)
 {
+    if (second.IsDead())
+    {
+        return;
+    }
+
     int const damage = first.m_fighter.m_power - second.m_fighter.m_defense;
 
     std::string const description = fmt::format("{} attacks {}", first.Name(), second.Name());
     if (damage > 0)
     {
-        second.m_fighter.SetHitpoints(second.m_fighter.m_hpCurrent - damage);
+        second.m_fighter.TakeDamage(damage);
         if (second.m_fighter.m_hpCurrent == 0)
         {
             m_messages.Add(fmt::format("{} for {} hit points. {} is dead!", description, damage,
