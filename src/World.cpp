@@ -18,14 +18,16 @@ constexpr int MaxMonstersPerRoom = 2;
 namespace Color
 {
 
-auto const PlayerAttack = ftxui::Color(0xE0, 0xE0, 0xE0);
-auto const EnemyAttack = ftxui::Color(0xFF, 0xC0, 0xC0);
-auto const PlayerDie = ftxui::Color(0xFF, 0x30, 0x30);
-auto const EnemyDie = ftxui::Color(0xFF, 0xA0, 0x30);
-auto const WelcomeText = ftxui::Color(0x20, 0xA0, 0xFF);
-auto const BarText = ftxui::Color::White;
-auto const BarFilled = ftxui::Color(0x0, 0x60, 0x0);
 auto const BarEmpty = ftxui::Color(0x40, 0x10, 0x10);
+auto const BarFilled = ftxui::Color(0x0, 0x60, 0x0);
+auto const BarText = ftxui::Color::White;
+auto const ControlsText = ftxui::Color::Yellow;
+auto const EnemyAttack = ftxui::Color(0xFF, 0xC0, 0xC0);
+auto const EnemyDie = ftxui::Color(0xFF, 0xA0, 0x30);
+auto const HintText = ftxui::Color::LightSlateGrey;
+auto const PlayerAttack = ftxui::Color(0xE0, 0xE0, 0xE0);
+auto const PlayerDie = ftxui::Color(0xFF, 0x30, 0x30);
+auto const WelcomeText = ftxui::Color(0x20, 0xA0, 0xFF);
 
 } // namespace Color
 
@@ -61,6 +63,22 @@ Point NextStep(Point const& from, Point const& to)
     return result;
 }
 
+auto RenderHelp()
+{
+    ftxui::Elements help;
+    auto add = [&help](std::string const& str) {
+        help.push_back(ftxui::text(str) | ftxui::color(Color::ControlsText));
+    };
+
+    add(" Use arrow keys to move around the dungeon, attack monsters and interact with NPC");
+    add(" Use SPACE to skip the turn and let the monster come to you without getting hit");
+    add(" Use i to open inventory and use items, d to drop stuff on the ground and g to pick up");
+    add(" Use q to give up and cowardly leave the dungeon");
+    add("");
+
+    return ftxui::window(ftxui::text("[  Controls  ]") | ftxui::center, ftxui::vbox(help));
+}
+
 } // namespace
 
 World::World(int mapWidth, int mapHeight, int fovRadius)
@@ -70,6 +88,7 @@ World::World(int mapWidth, int mapHeight, int fovRadius)
       m_player(Actor::Create(Actor::Type::Player, m_map.m_rooms.front().Center()))
 {
     m_messages.Add("WELCOME TO THE UNDERWORLD, TRAVELER. LET THE GAME BEGIN!", Color::WelcomeText);
+    m_messages.Add("Press v to open an ancient book of knowledge...", Color::HintText);
 
     m_map.LineOfSight(m_player.m_point);
     // generate monsters
@@ -101,11 +120,16 @@ ftxui::Element World::Render() const
 {
     if (m_current == Tab::Messages)
     {
-        return ftxui::window(ftxui::text("[  Message history  ]") | ftxui::center,
-                             m_messages.RenderAll(m_focusedMessage) | ftxui::vscroll_indicator |
-                                 ftxui::frame |
-                                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height) |
-                                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width));
+        auto history = ftxui::window(ftxui::text("[  Message history  ]") | ftxui::center,
+                                     m_messages.RenderAll(m_focusedMessage) |
+                                         ftxui::vscroll_indicator | ftxui::frame |
+                                         ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height) |
+                                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width));
+
+        ftxui::Elements all;
+        all.push_back(history);
+        all.push_back(RenderHelp());
+        return ftxui::vbox(all);
     }
 
     ftxui::Elements world;
@@ -173,6 +197,12 @@ bool World::EventHandler(ftxui::Event const& event)
             m_current = Tab::Game;
         }
 
+        return true;
+    }
+
+    if (event == ftxui::Event::Escape && m_current == Tab::Messages)
+    {
+        m_current = Tab::Game;
         return true;
     }
 
