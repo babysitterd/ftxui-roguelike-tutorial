@@ -2,6 +2,7 @@
 
 #include <ftxui/dom/elements.hpp>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 

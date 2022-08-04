@@ -34,6 +34,7 @@ set(ROGUELIKE_SOURCES
   src/Map.cpp
   src/Tile.cpp
   src/World.cpp
+  src/Item.cpp
 )
 
 add_executable(roguelike-tutorial

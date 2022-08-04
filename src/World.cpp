@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 
 namespace
 {
@@ -14,27 +15,12 @@ constexpr int RoomMaxSize = 10;
 constexpr int RoomMinSize = 6;
 constexpr int MaxRooms = 30;
 constexpr int MaxMonstersPerRoom = 2;
+constexpr int MaxPotionsPerRoom = 2;
+constexpr int MaxInventoryCapacity = 10;
 
-namespace Color
+template <class Iterator> auto FindAt(Iterator from, Iterator to, Point const& point)
 {
-
-auto const BarEmpty = ftxui::Color(0x40, 0x10, 0x10);
-auto const BarFilled = ftxui::Color(0x0, 0x60, 0x0);
-auto const BarText = ftxui::Color::White;
-auto const ControlsText = ftxui::Color::Yellow;
-auto const EnemyAttack = ftxui::Color(0xFF, 0xC0, 0xC0);
-auto const EnemyDie = ftxui::Color(0xFF, 0xA0, 0x30);
-auto const HintText = ftxui::Color::LightSlateGrey;
-auto const PlayerAttack = ftxui::Color(0xE0, 0xE0, 0xE0);
-auto const PlayerDie = ftxui::Color(0xFF, 0x30, 0x30);
-auto const WelcomeText = ftxui::Color(0x20, 0xA0, 0xFF);
-
-} // namespace Color
-
-template <class T> auto FindActorAt(T& actors, Point const& point)
-{
-    return std::find_if(actors.begin(), actors.end(),
-                        [&point](Actor const& x) { return x.m_point == point; });
+    return std::find_if(from, to, [&point](auto const& x) { return x.m_point == point; });
 }
 
 Point NextStep(Point const& from, Point const& to)
@@ -47,16 +33,13 @@ Point NextStep(Point const& from, Point const& to)
     int const sy = from.y < to.y ? 1 : -1;
     int error = dx + dy;
 
-    if (2 * error - dy > dx - 2 * error)
+    if (2 * error >= dy)
     {
-        // horizontal step
-        error += dy;
         result.x += sx;
     }
-    else
+
+    if (2 * error <= dx)
     {
-        // vertical step
-        error += dx;
         result.y += sy;
     }
 
@@ -102,7 +85,7 @@ World::World(int mapWidth, int mapHeight, int fovRadius)
             {
                 whereTo = Point(m_rng.RandomInt(room.m_northWest.x + 1, room.m_southEast.x - 1),
                                 m_rng.RandomInt(room.m_northWest.y + 1, room.m_southEast.y - 1));
-            } while (FindActorAt(m_actors, whereTo) != m_actors.end());
+            } while (FindAt(m_actors.begin(), m_actors.end(), whereTo) != m_actors.end());
 
             if (m_rng.RandomInt(0, 100) < 80)
             {
@@ -114,17 +97,34 @@ World::World(int mapWidth, int mapHeight, int fovRadius)
             }
         }
     }
+    // generate items
+    for (auto const& room : m_map.m_rooms)
+    {
+        auto const number = m_rng.RandomInt(0, MaxPotionsPerRoom);
+        for (int i = 0; i < number; ++i)
+        {
+            Point whereTo;
+            do
+            {
+                whereTo = Point(m_rng.RandomInt(room.m_northWest.x + 1, room.m_southEast.x - 1),
+                                m_rng.RandomInt(room.m_northWest.y + 1, room.m_southEast.y - 1));
+            } while (FindAt(m_actors.begin(), m_actors.end(), whereTo) != m_actors.end() &&
+                     FindAt(m_items.begin(), m_items.end(), whereTo) != m_items.end());
+
+            m_items.push_back(Item::Create(Item::Type::HealthPotion, whereTo));
+        }
+    }
 }
 
 ftxui::Element World::Render() const
 {
-    if (m_current == Tab::Messages)
+    if (m_current == Mode::Messages)
     {
-        auto history = ftxui::window(ftxui::text("[  Message history  ]") | ftxui::center,
-                                     m_messages.RenderAll(m_focusedMessage) |
-                                         ftxui::vscroll_indicator | ftxui::frame |
-                                         ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height) |
-                                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width));
+        auto history = ftxui::window(
+            ftxui::text("[  Message history  ]") | ftxui::center,
+            m_messages.RenderAll(m_focusedMessage) | ftxui::vscroll_indicator | ftxui::frame |
+                ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height - 1) |
+                ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width - 1));
 
         ftxui::Elements all;
         all.push_back(history);
@@ -132,30 +132,76 @@ ftxui::Element World::Render() const
         return ftxui::vbox(all);
     }
 
-    ftxui::Elements world;
-    world.reserve(m_map.m_height);
-    for (int i = 0; i < m_map.m_height; ++i)
+    ftxui::Element mainArea;
+    if (m_current == Mode::Game)
     {
-        ftxui::Elements row;
-        row.reserve(m_map.m_width);
-        for (int j = 0; j < m_map.m_width; ++j)
+        ftxui::Elements field;
+        field.reserve(m_map.m_height);
+        for (int i = 0; i < m_map.m_height; ++i)
         {
-            Point const current{j, i};
-            bool const isLit = m_map.m_light[j + i * m_map.m_width];
-            if (current == m_player.m_point)
+            ftxui::Elements row;
+            row.reserve(m_map.m_width);
+            for (int j = 0; j < m_map.m_width; ++j)
             {
-                row.push_back(m_player.Render());
+                Point const current{j, i};
+                bool const isLit = m_map.m_light[j + i * m_map.m_width];
+                auto dead = std::partition_point(m_actors.begin(), m_actors.end(),
+                                                 [](auto& x) { return !x.IsDead(); });
+                // Render order:
+                // 1. Player
+                if (current == m_player.m_point)
+                {
+                    row.push_back(m_player.Render());
+                }
+                // 2. Living actors
+                else if (auto it = FindAt(m_actors.begin(), dead, current); it != dead && isLit)
+                {
+                    row.push_back(it->Render());
+                }
+                // 3. Items
+                else if (auto it = FindAt(m_items.begin(), m_items.end(), current);
+                         it != m_items.end() && isLit)
+                {
+                    row.push_back(it->Render());
+                }
+                // 4. Corpses
+                else if (auto it = FindAt(dead, m_actors.end(), current);
+                         it != m_actors.end() && isLit)
+                {
+                    row.push_back(it->Render());
+                }
+                // 5. Map terrain
+                else
+                {
+                    row.push_back(m_map.Render(current));
+                }
             }
-            else if (auto it = FindActorAt(m_actors, current); it != m_actors.end() && isLit)
-            {
-                row.push_back(it->Render());
-            }
-            else
-            {
-                row.push_back(m_map.Render(current));
-            }
+            field.push_back(ftxui::hbox(row));
         }
-        world.push_back(ftxui::hbox(row));
+        mainArea = ftxui::border(ftxui::vbox(field));
+    }
+    else if (m_current == Mode::InventoryUse || m_current == Mode::InventoryDrop)
+    {
+        ftxui::Elements all;
+        char letter = 'a';
+        for (auto const& item : m_inventory)
+        {
+            all.push_back(ftxui::text(fmt::format("{}. {}", letter++, item.Name())) |
+                          ftxui::color(Color::ControlsText));
+        }
+
+        if (all.empty())
+        {
+            all.push_back(ftxui::text("( EMPTY )") | ftxui::color(Color::HintText));
+        }
+
+        std::string const header = fmt::format("[ Select an item to {} ]",
+                                               m_current == Mode::InventoryUse ? "use" : "drop");
+        auto inventory = ftxui::window(ftxui::text(header) | ftxui::center, ftxui::vbox(all)) |
+                         ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height / 2) |
+                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width / 2) | ftxui::center;
+
+        mainArea = ftxui::border(inventory);
     }
 
     // stats pane
@@ -176,7 +222,8 @@ ftxui::Element World::Render() const
     stats[0] = lifebar;
 
     ftxui::Elements all;
-    all.push_back(ftxui::border(ftxui::vbox(world)));
+    all.push_back(mainArea | ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height + 1) |
+                  ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width + 1));
     all.push_back(
         ftxui::hbox(ftxui::Elements{ftxui::border(ftxui::vbox(stats)),
                                     ftxui::border(m_messages.Render(displayed)) | ftxui::flex}));
@@ -185,28 +232,92 @@ ftxui::Element World::Render() const
 
 bool World::EventHandler(ftxui::Event const& event)
 {
+    // return back to the game from any mode
+    if (event == ftxui::Event::Escape && m_current != Mode::Game)
+    {
+        m_current = Mode::Game;
+        return true;
+    }
+
+    // Message history tab opens, last message is focused
     if (event == ftxui::Event::Character('v'))
     {
-        if (m_current == Tab::Game)
+        if (m_current == Mode::Game)
         {
-            m_current = Tab::Messages;
+            m_current = Mode::Messages;
             m_focusedMessage = m_messages.m_data.size() - 1;
         }
-        else if (m_current == Tab::Messages)
+
+        return true;
+    }
+
+    // Open inventory to use item
+    if (event == ftxui::Event::Character('i'))
+    {
+        if (m_current == Mode::Game)
         {
-            m_current = Tab::Game;
+            m_current = Mode::InventoryUse;
         }
 
         return true;
     }
 
-    if (event == ftxui::Event::Escape && m_current == Tab::Messages)
+    // Open inventory to drop item
+    if (event == ftxui::Event::Character('d'))
     {
-        m_current = Tab::Game;
+        if (m_current == Mode::Game)
+        {
+            m_current = Mode::InventoryDrop;
+        }
+
         return true;
     }
 
-    if (m_current == Tab::Messages)
+    // Handle inventory mode choice
+    if (m_current == Mode::InventoryUse || m_current == Mode::InventoryDrop)
+    {
+        if (event.is_character())
+        {
+            std::string const tmp = event.character();
+            if (tmp.size() != 1)
+            {
+                return false;
+            }
+
+            std::size_t index = std::tolower(static_cast<unsigned char>(tmp.front())) - int{'a'};
+            if (index < m_inventory.size())
+            {
+                if (m_current == Mode::InventoryUse)
+                {
+                    try
+                    {
+                        m_inventory[index].m_effect(m_player, m_messages);
+                        m_inventory.erase(m_inventory.begin() + index);
+                        m_current = Mode::Game;
+                    }
+                    catch (std::logic_error& e)
+                    {
+                        m_messages.Add(e.what(), Color::HintText);
+                    }
+                }
+                else
+                {
+                    m_messages.Add(fmt::format("You dropped the {}.", m_inventory[index].Name()),
+                                   Color::HintText);
+                    m_items.push_back(m_inventory[index]);
+                    m_items.back().m_point = m_player.m_point;
+                    m_inventory.erase(m_inventory.begin() + index);
+                    m_current = Mode::Game;
+                }
+            }
+            else
+            {
+                m_messages.Add("Invalid entry.", Color::HintText);
+            }
+        }
+    }
+
+    if (m_current == Mode::Messages)
     {
         if (event == ftxui::Event::ArrowUp && m_focusedMessage != 0)
         {
@@ -219,11 +330,15 @@ bool World::EventHandler(ftxui::Event const& event)
         }
     }
 
-    std::array<ftxui::Event, 5> const actions{ftxui::Event::ArrowUp, ftxui::Event::ArrowRight,
-                                              ftxui::Event::ArrowDown, ftxui::Event::ArrowLeft,
-                                              ftxui::Event::Character(' ') /* wait */};
+    std::array<ftxui::Event, 6> const actions{ftxui::Event::ArrowUp,
+                                              ftxui::Event::ArrowRight,
+                                              ftxui::Event::ArrowDown,
+                                              ftxui::Event::ArrowLeft,
+                                              ftxui::Event::Character(' ') /* wait */,
+                                              ftxui::Event::Character('g') /* pick up */};
 
-    if (m_current == Tab::Game && std::find(actions.begin(), actions.end(), event) != actions.end())
+    if (m_current == Mode::Game &&
+        std::find(actions.begin(), actions.end(), event) != actions.end())
     {
         if (m_player.IsDead())
         {
@@ -231,7 +346,29 @@ bool World::EventHandler(ftxui::Event const& event)
         }
 
         // player makes a move
-        if (event != ftxui::Event::Character(' '))
+        if (event == ftxui::Event::Character('g'))
+        {
+            if (auto toPickUp = FindAt(m_items.begin(), m_items.end(), m_player.m_point);
+                toPickUp != m_items.end())
+            {
+                if (m_inventory.size() < MaxInventoryCapacity)
+                {
+                    m_messages.Add(fmt::format("You picked up the {}!", toPickUp->Name()),
+                                   Color::BarText);
+                    m_inventory.push_back(*toPickUp);
+                    m_items.erase(toPickUp);
+                }
+                else
+                {
+                    m_messages.Add("Your inventory is full.", Color::HintText);
+                }
+            }
+            else
+            {
+                m_messages.Add("There is nothing to pick up", Color::HintText);
+            }
+        }
+        else if (event != ftxui::Event::Character(' '))
         {
             auto const previous = m_player.m_point;
 
@@ -255,7 +392,7 @@ bool World::EventHandler(ftxui::Event const& event)
                 --m_player.m_point.x;
             }
 
-            auto toInteract = FindActorAt(m_actors, m_player.m_point);
+            auto toInteract = FindAt(m_actors.begin(), m_actors.end(), m_player.m_point);
             auto const isAlive = toInteract != m_actors.end() && !toInteract->IsDead();
             if (isAlive)
             {
@@ -282,10 +419,11 @@ bool World::EventHandler(ftxui::Event const& event)
                 continue;
             }
 
-            auto const delta = std::abs(actor.m_point.x - m_player.m_point.x) +
-                               std::abs(actor.m_point.y - m_player.m_point.y);
+            auto const dx = std::abs(actor.m_point.x - m_player.m_point.x);
+            auto const dy = std::abs(actor.m_point.y - m_player.m_point.y);
 
-            if (delta == 1)
+            // monster will attack if placed adjacent to player
+            if (dx + dy == 1 || (dx == 1 && dy == 1))
             {
                 Interact(actor, m_player);
             }
@@ -298,6 +436,8 @@ bool World::EventHandler(ftxui::Event const& event)
                 }
             }
         }
+        // to render living actors first
+        std::partition(m_actors.begin(), m_actors.end(), [](auto& x) { return !x.IsDead(); });
 
         if (m_player.IsDead())
         {
