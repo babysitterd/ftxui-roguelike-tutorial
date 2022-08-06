@@ -18,6 +18,8 @@ class FovMap : public Map
 
     void Bresenham(Point from, Point to);
 
+    bool IsLit(Point const& point) const;
+
     ftxui::Element Render(Point const& point) const;
 
     std::ostream& WriteToStream(std::ostream& os) const override;

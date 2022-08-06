@@ -2,11 +2,15 @@
 
 #include "NaiveMapGenerator.hpp"
 
+#include <ftxui/component/mouse.hpp>
+
 #include <fmt/core.h>
 
 #include <algorithm>
 #include <array>
 #include <cctype>
+
+using namespace std::string_literals;
 
 namespace
 {
@@ -53,11 +57,11 @@ auto RenderHelp()
         help.push_back(ftxui::text(str) | ftxui::color(Color::ControlsText));
     };
 
+    add(" Hover over the monsters with your mosue to get more information about those");
     add(" Use arrow keys to move around the dungeon, attack monsters and interact with NPC");
     add(" Use SPACE to skip the turn and let the monster come to you without getting hit");
     add(" Use i to open inventory and use items, d to drop stuff on the ground and g to pick up");
     add(" Use q to give up and cowardly leave the dungeon");
-    add("");
 
     return ftxui::window(ftxui::text("[  Controls  ]") | ftxui::center, ftxui::vbox(help));
 }
@@ -144,7 +148,7 @@ ftxui::Element World::Render() const
             for (int j = 0; j < m_map.m_width; ++j)
             {
                 Point const current{j, i};
-                bool const isLit = m_map.m_light[j + i * m_map.m_width];
+                bool const isLit = m_map.IsLit({j, i});
                 auto dead = std::partition_point(m_actors.begin(), m_actors.end(),
                                                  [](auto& x) { return !x.IsDead(); });
                 // Render order:
@@ -206,20 +210,27 @@ ftxui::Element World::Render() const
 
     // stats pane
     constexpr std::size_t displayed = 5;
-    ftxui::Elements stats(displayed, ftxui::text(std::string("")));
+    ftxui::Elements stats(displayed, ftxui::text(""s));
     // lifebar
-    std::string const label =
-        fmt::format("HP: {:>3}/{:<3}", m_player.m_fighter.m_hpCurrent, m_player.m_fighter.m_hpFull);
-    auto lifebar = ftxui::hbox(ftxui::Elements{
-        ftxui::text(label) | ftxui::color(Color::BarText),
-        ftxui::text(std::string(m_player.m_fighter.m_hpCurrent, ' ')) |
-            ftxui::bgcolor(Color::BarFilled),
-        ftxui::text(
-            std::string(m_player.m_fighter.m_hpFull - m_player.m_fighter.m_hpCurrent, ' ')) |
-            ftxui::bgcolor(Color::BarEmpty)
+    auto generateLifebar = [this](Actor const& actor) {
+        std::string const label =
+            fmt::format("HP: {:>3}/{:<3}", actor.m_fighter.m_hpCurrent, actor.m_fighter.m_hpFull);
+        return ftxui::hbox(ftxui::Elements{
+            ftxui::text(label) | ftxui::color(Color::BarText),
+            ftxui::text(std::string(actor.m_fighter.m_hpCurrent, ' ')) |
+                ftxui::bgcolor(Color::BarFilled),
+            ftxui::text(std::string(actor.m_fighter.m_hpFull - actor.m_fighter.m_hpCurrent, ' ')) |
+                ftxui::bgcolor(Color::BarEmpty)
 
-    });
-    stats[0] = lifebar;
+        });
+    };
+    stats[0] = ftxui::text(m_player.Name() + ":") | ftxui::color(ftxui::Color::Green);
+    stats[1] = generateLifebar(m_player);
+    if (auto it = FindAt(m_actors.begin(), m_actors.end(), m_mouse); it != m_actors.end())
+    {
+        stats[2] = ftxui::text(it->Name()) | ftxui::color(ftxui::Color::Red);
+        stats[3] = generateLifebar(*it);
+    }
 
     ftxui::Elements all;
     all.push_back(mainArea | ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height + 1) |
@@ -230,8 +241,15 @@ ftxui::Element World::Render() const
     return ftxui::vbox(all);
 }
 
-bool World::EventHandler(ftxui::Event const& event)
+bool World::EventHandler(ftxui::Event& event)
 {
+    if (event.is_mouse())
+    {
+        m_mouse.x = (event.mouse().x - 1);
+        m_mouse.y = (event.mouse().y - 1);
+        return false;
+    }
+
     // return back to the game from any mode
     if (event == ftxui::Event::Escape && m_current != Mode::Game)
     {
@@ -427,7 +445,7 @@ bool World::EventHandler(ftxui::Event const& event)
             {
                 Interact(actor, m_player);
             }
-            else if (m_map.m_light[actor.m_point.x + actor.m_point.y * m_map.m_width])
+            else if (m_map.IsLit(actor.m_point))
             {
                 auto const next = NextStep(actor.m_point, m_player.m_point);
                 if (m_map.At(next).CanWalk())

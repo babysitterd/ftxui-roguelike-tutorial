@@ -30,7 +30,7 @@ class World
 
     ftxui::Element Render() const;
 
-    bool EventHandler(ftxui::Event const& event);
+    bool EventHandler(ftxui::Event& event);
     void Interact(Actor& first, Actor& second);
 
   private:
@@ -44,4 +44,5 @@ class World
     MessageLog m_messages;
     Mode m_current = Mode::Game;
     std::size_t m_focusedMessage;
+    Point m_mouse;
 };

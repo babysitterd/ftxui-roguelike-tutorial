@@ -91,11 +91,16 @@ void FovMap::Bresenham(Point from, Point to)
     }
 }
 
+bool FovMap::IsLit(Point const& point) const
+{
+    return m_light[point.x + point.y * m_width];
+}
+
 ftxui::Element FovMap::Render(Point const& point) const
 {
     if (At(point).IsExplored())
     {
-        return m_light[point.x + point.y * m_width] ? At(point).RenderLight() : At(point).Render();
+        return IsLit(point) ? At(point).RenderLight() : At(point).Render();
     }
 
     return Tile::Create(Tile::Type::Void).Render();
@@ -107,7 +112,7 @@ std::ostream& FovMap::WriteToStream(std::ostream& os) const
     {
         for (int x = 0; x < m_width; ++x)
         {
-            os << (m_light[x + y * m_width] ? m_tiles[x + y * m_width].Codepoint() : '%');
+            os << (IsLit({x, y}) ? m_tiles[x + y * m_width].Codepoint() : '%');
         }
         os << '\n';
     }
