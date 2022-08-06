@@ -9,11 +9,8 @@ cmake ..
 cmake --build .
 ```
 
-Webassembly build steps
+To run a Webassembly version just
 ```
-mkdir build_emscripten && cd build_emscripten
-emcmake cmake ..
-cmake --build .
-./run_webassembly.py
+docker compose up
 (visit localhost:8000)
 ```
