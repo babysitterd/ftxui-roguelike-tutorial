@@ -93,6 +93,10 @@ void FovMap::Bresenham(Point from, Point to)
 
 bool FovMap::IsLit(Point const& point) const
 {
+    if (IsOutOfBounds(point))
+    {
+        return false;
+    }
     return m_light[point.x + point.y * m_width];
 }
 

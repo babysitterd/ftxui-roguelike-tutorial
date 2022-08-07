@@ -31,9 +31,12 @@ class World
     ftxui::Element Render() const;
 
     bool EventHandler(ftxui::Event& event);
-    void Interact(Actor& first, Actor& second);
+    void MeleeAttack(Actor& first, Actor& second);
+    void DealDamage(Actor& receiver, int damage, std::string const& description);
 
-  private:
+    void GenerateMonsters();
+    void GenerateItems();
+
     RNG m_rng;
     std::unique_ptr<MapGeneratorBase> m_generator;
     FovMap m_map;
@@ -41,8 +44,8 @@ class World
     std::vector<Actor> m_actors;
     std::vector<Item> m_items;
     std::vector<Item> m_inventory;
-    MessageLog m_messages;
     Mode m_current = Mode::Game;
+    MessageLog m_messages;
     std::size_t m_focusedMessage;
     Point m_mouse;
 };

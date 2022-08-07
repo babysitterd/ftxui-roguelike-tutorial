@@ -78,46 +78,9 @@ World::World(int mapWidth, int mapHeight, int fovRadius)
     m_messages.Add("Press v to open an ancient book of knowledge...", Color::HintText);
 
     m_map.LineOfSight(m_player.m_point);
-    // generate monsters
-    for (auto const& room : m_map.m_rooms)
-    {
-        auto const number = m_rng.RandomInt(0, MaxMonstersPerRoom);
-        for (int i = 0; i < number; ++i)
-        {
-            Point whereTo;
-            do
-            {
-                whereTo = Point(m_rng.RandomInt(room.m_northWest.x + 1, room.m_southEast.x - 1),
-                                m_rng.RandomInt(room.m_northWest.y + 1, room.m_southEast.y - 1));
-            } while (FindAt(m_actors.begin(), m_actors.end(), whereTo) != m_actors.end());
 
-            if (m_rng.RandomInt(0, 100) < 80)
-            {
-                m_actors.push_back(Actor::Create(Actor::Type::Orc, whereTo));
-            }
-            else
-            {
-                m_actors.push_back(Actor::Create(Actor::Type::Troll, whereTo));
-            }
-        }
-    }
-    // generate items
-    for (auto const& room : m_map.m_rooms)
-    {
-        auto const number = m_rng.RandomInt(0, MaxPotionsPerRoom);
-        for (int i = 0; i < number; ++i)
-        {
-            Point whereTo;
-            do
-            {
-                whereTo = Point(m_rng.RandomInt(room.m_northWest.x + 1, room.m_southEast.x - 1),
-                                m_rng.RandomInt(room.m_northWest.y + 1, room.m_southEast.y - 1));
-            } while (FindAt(m_actors.begin(), m_actors.end(), whereTo) != m_actors.end() &&
-                     FindAt(m_items.begin(), m_items.end(), whereTo) != m_items.end());
-
-            m_items.push_back(Item::Create(Item::Type::HealthPotion, whereTo));
-        }
-    }
+    GenerateMonsters();
+    GenerateItems();
 }
 
 ftxui::Element World::Render() const
@@ -226,10 +189,13 @@ ftxui::Element World::Render() const
     };
     stats[0] = ftxui::text(m_player.Name() + ":") | ftxui::color(ftxui::Color::Green);
     stats[1] = generateLifebar(m_player);
-    if (auto it = FindAt(m_actors.begin(), m_actors.end(), m_mouse); it != m_actors.end())
+    if (m_map.IsLit(m_mouse))
     {
-        stats[2] = ftxui::text(it->Name()) | ftxui::color(ftxui::Color::Red);
-        stats[3] = generateLifebar(*it);
+        if (auto it = FindAt(m_actors.begin(), m_actors.end(), m_mouse); it != m_actors.end())
+        {
+            stats[2] = ftxui::text(it->Name()) | ftxui::color(ftxui::Color::Red);
+            stats[3] = generateLifebar(*it);
+        }
     }
 
     ftxui::Elements all;
@@ -309,7 +275,7 @@ bool World::EventHandler(ftxui::Event& event)
                 {
                     try
                     {
-                        m_inventory[index].m_effect(m_player, m_messages);
+                        m_inventory[index].m_effect(*this);
                         m_inventory.erase(m_inventory.begin() + index);
                         m_current = Mode::Game;
                     }
@@ -414,7 +380,7 @@ bool World::EventHandler(ftxui::Event& event)
             auto const isAlive = toInteract != m_actors.end() && !toInteract->IsDead();
             if (isAlive)
             {
-                Interact(m_player, *toInteract);
+                MeleeAttack(m_player, *toInteract);
             }
 
             // rewind if the move was illigal
@@ -443,7 +409,7 @@ bool World::EventHandler(ftxui::Event& event)
             // monster will attack if placed adjacent to player
             if (dx + dy == 1 || (dx == 1 && dy == 1))
             {
-                Interact(actor, m_player);
+                MeleeAttack(actor, m_player);
             }
             else if (m_map.IsLit(actor.m_point))
             {
@@ -468,7 +434,7 @@ bool World::EventHandler(ftxui::Event& event)
     return false;
 }
 
-void World::Interact(Actor& first, Actor& second)
+void World::MeleeAttack(Actor& first, Actor& second)
 {
     if (second.IsDead())
     {
@@ -478,30 +444,88 @@ void World::Interact(Actor& first, Actor& second)
     int const damage = first.m_fighter.m_power - second.m_fighter.m_defense;
 
     std::string const description = fmt::format("{} attacks {}", first.Name(), second.Name());
+
+    DealDamage(second, damage, description);
+}
+
+void World::DealDamage(Actor& receiver, int damage, std::string const& description)
+{
     if (damage > 0)
     {
-        second.m_fighter.TakeDamage(damage);
-        if (second.m_fighter.m_hpCurrent == 0)
+        receiver.m_fighter.TakeDamage(damage);
+        if (receiver.m_fighter.m_hpCurrent == 0)
         {
-            m_messages.Add(fmt::format("{} for {} hit points. {} is dead!", description, damage,
-                                       second.Name()),
-                           second.m_type == Actor::Type::Player ? Color::PlayerDie
-                                                                : Color::EnemyDie);
-            second.Die();
+            m_messages.Add(
+                fmt::format("{} for {} damage. {} is dead!", description, damage, receiver.Name()),
+                receiver.m_type == Actor::Type::Player ? Color::PlayerDie : Color::EnemyDie);
+            receiver.Die();
         }
         else
         {
-            m_messages.Add(fmt::format("{} for {} hit points. ({}/{})", description, damage,
-                                       second.m_fighter.m_hpCurrent, second.m_fighter.m_hpFull),
-                           first.m_type == Actor::Type::Player ? Color::PlayerAttack
-                                                               : Color::EnemyAttack);
+            m_messages.Add(fmt::format("{} for {} damage. ({}/{})", description, damage,
+                                       receiver.m_fighter.m_hpCurrent, receiver.m_fighter.m_hpFull),
+                           receiver.m_type == Actor::Type::Player ? Color::EnemyAttack
+                                                                  : Color::PlayerAttack);
         }
     }
     else
     {
         m_messages.Add(fmt::format("{} but does no damage. ({}/{})", description,
-                                   second.m_fighter.m_hpCurrent, second.m_fighter.m_hpFull),
-                       first.m_type == Actor::Type::Player ? Color::PlayerAttack
-                                                           : Color::EnemyAttack);
+                                   receiver.m_fighter.m_hpCurrent, receiver.m_fighter.m_hpFull),
+                       receiver.m_type == Actor::Type::Player ? Color::EnemyAttack
+                                                              : Color::PlayerAttack);
+    }
+}
+
+void World::GenerateMonsters()
+{
+    for (auto const& room : m_map.m_rooms)
+    {
+        auto const number = m_rng.RandomInt(0, MaxMonstersPerRoom);
+        for (int i = 0; i < number; ++i)
+        {
+            Point whereTo;
+            do
+            {
+                whereTo = Point(m_rng.RandomInt(room.m_northWest.x + 1, room.m_southEast.x - 1),
+                                m_rng.RandomInt(room.m_northWest.y + 1, room.m_southEast.y - 1));
+            } while (FindAt(m_actors.begin(), m_actors.end(), whereTo) != m_actors.end());
+
+            if (m_rng.RandomInt(0, 100) < 80)
+            {
+                m_actors.push_back(Actor::Create(Actor::Type::Orc, whereTo));
+            }
+            else
+            {
+                m_actors.push_back(Actor::Create(Actor::Type::Troll, whereTo));
+            }
+        }
+    }
+}
+
+void World::GenerateItems()
+{
+    for (auto const& room : m_map.m_rooms)
+    {
+        auto const number = m_rng.RandomInt(0, MaxPotionsPerRoom);
+        for (int i = 0; i < number; ++i)
+        {
+            Point whereTo;
+            do
+            {
+                whereTo = Point(m_rng.RandomInt(room.m_northWest.x + 1, room.m_southEast.x - 1),
+                                m_rng.RandomInt(room.m_northWest.y + 1, room.m_southEast.y - 1));
+            } while (FindAt(m_actors.begin(), m_actors.end(), whereTo) != m_actors.end() &&
+                     FindAt(m_items.begin(), m_items.end(), whereTo) != m_items.end());
+
+            if (m_rng.RandomInt(0, 100) < 70)
+            {
+                m_items.push_back(Item::Create(Item::Type::HealthPotion, whereTo));
+            }
+            else
+            {
+                m_items.push_back(Item::Create(Item::Type::LightningScroll, whereTo));
+            }
+        }
     }
 }

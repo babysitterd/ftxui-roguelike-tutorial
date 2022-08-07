@@ -7,14 +7,17 @@
 
 #include <functional>
 
-using Effect = std::function<void(Actor&, MessageLog&)>;
+class World;
+
+using Effect = std::function<void(World&)>;
 
 class Item : public Entity
 {
   public:
     enum class Type
     {
-        HealthPotion
+        HealthPotion,
+        LightningScroll
     };
 
     Item(Type type, Point const& point, char codepoint, ftxui::Color const& color, Effect effect);
