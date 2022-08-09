@@ -100,7 +100,7 @@ ftxui::Element World::Render() const
     }
 
     ftxui::Element mainArea;
-    if (m_current == Mode::Game)
+    if (m_current == Mode::Game || m_current == Mode::SelectingTarget)
     {
         ftxui::Elements field;
         field.reserve(m_map.m_height);
@@ -141,6 +141,18 @@ ftxui::Element World::Render() const
                 else
                 {
                     row.push_back(m_map.Render(current));
+                }
+
+                if (m_current == Mode::SelectingTarget)
+                {
+                    auto const dx = std::abs(current.x - m_mouse.x);
+                    auto const dy = std::abs(current.y - m_mouse.y);
+
+                    if (dx <= m_inventory[m_itemInUse].m_radius &&
+                        dy <= m_inventory[m_itemInUse].m_radius)
+                    {
+                        row.back() = row.back() | ftxui::bgcolor(ftxui::Color::Grey11);
+                    }
                 }
             }
             field.push_back(ftxui::hbox(row));
@@ -213,6 +225,13 @@ bool World::EventHandler(ftxui::Event& event)
     {
         m_mouse.x = (event.mouse().x - 1);
         m_mouse.y = (event.mouse().y - 1);
+
+        if (m_current == Mode::SelectingTarget && event.mouse().button == ftxui::Mouse::Left &&
+            event.mouse().motion == ftxui::Mouse::Released)
+        {
+            UseItem(m_itemInUse, m_mouse);
+        }
+
         return false;
     }
 
@@ -273,15 +292,14 @@ bool World::EventHandler(ftxui::Event& event)
             {
                 if (m_current == Mode::InventoryUse)
                 {
-                    try
+                    if (m_inventory[index].m_isTargetSpell)
                     {
-                        m_inventory[index].m_effect(*this);
-                        m_inventory.erase(m_inventory.begin() + index);
-                        m_current = Mode::Game;
+                        m_itemInUse = index;
+                        m_current = Mode::SelectingTarget;
                     }
-                    catch (std::logic_error& e)
+                    else
                     {
-                        m_messages.Add(e.what(), Color::HintText);
+                        UseItem(index, Point{});
                     }
                 }
                 else
@@ -518,14 +536,35 @@ void World::GenerateItems()
             } while (FindAt(m_actors.begin(), m_actors.end(), whereTo) != m_actors.end() &&
                      FindAt(m_items.begin(), m_items.end(), whereTo) != m_items.end());
 
-            if (m_rng.RandomInt(0, 100) < 70)
+            m_items.push_back(Item::Create(Item::Type::FireballScroll, whereTo));
+
+            auto const dice = m_rng.RandomInt(0, 100);
+            if (dice < 60)
             {
                 m_items.push_back(Item::Create(Item::Type::HealthPotion, whereTo));
             }
-            else
+            else if (dice < 80)
             {
                 m_items.push_back(Item::Create(Item::Type::LightningScroll, whereTo));
             }
+            else
+            {
+                m_items.push_back(Item::Create(Item::Type::FireballScroll, whereTo));
+            }
         }
+    }
+}
+
+void World::UseItem(std::size_t index, Point const& target)
+{
+    try
+    {
+        m_inventory[index].m_effect(*this, target);
+        m_inventory.erase(m_inventory.begin() + index);
+        m_current = Mode::Game;
+    }
+    catch (std::logic_error& e)
+    {
+        m_messages.Add(e.what(), Color::HintText);
     }
 }

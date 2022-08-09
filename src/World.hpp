@@ -20,7 +20,8 @@ enum class Mode
     Game,
     Messages,
     InventoryUse,
-    InventoryDrop
+    InventoryDrop,
+    SelectingTarget
 };
 
 class World
@@ -33,6 +34,7 @@ class World
     bool EventHandler(ftxui::Event& event);
     void MeleeAttack(Actor& first, Actor& second);
     void DealDamage(Actor& receiver, int damage, std::string const& description);
+    void UseItem(std::size_t index, Point const& target);
 
     void GenerateMonsters();
     void GenerateItems();
@@ -48,4 +50,5 @@ class World
     MessageLog m_messages;
     std::size_t m_focusedMessage;
     Point m_mouse;
+    std::size_t m_itemInUse;
 };

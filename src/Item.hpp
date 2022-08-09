@@ -9,7 +9,7 @@
 
 class World;
 
-using Effect = std::function<void(World&)>;
+using Effect = std::function<void(World&, Point const&)>;
 
 class Item : public Entity
 {
@@ -17,10 +17,12 @@ class Item : public Entity
     enum class Type
     {
         HealthPotion,
-        LightningScroll
+        LightningScroll,
+        FireballScroll
     };
 
-    Item(Type type, Point const& point, char codepoint, ftxui::Color const& color, Effect effect);
+    Item(Type type, Point const& point, char codepoint, ftxui::Color const& color, Effect effect,
+         bool isTargetSpell = false, int radius = 0);
 
     static Item Create(Type type, Point const& point);
 
@@ -29,4 +31,6 @@ class Item : public Entity
     Type m_type;
     Point m_point;
     Effect m_effect;
+    bool m_isTargetSpell;
+    int m_radius;
 };
