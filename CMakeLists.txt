@@ -26,6 +26,7 @@ project(ftxui-roguelike-tutorial
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
+conan_basic_setup(TARGETS)
 
 set(ROGUELIKE_SOURCES
   src/Actor.cpp
@@ -45,6 +46,7 @@ add_executable(roguelike-tutorial
 target_include_directories(roguelike-tutorial PRIVATE src)
 
 target_link_libraries(roguelike-tutorial
+  PRIVATE CONAN_PKG::range-v3
   PRIVATE ${CONAN_LIBS}
   PRIVATE ftxui::screen
   PRIVATE ftxui::dom

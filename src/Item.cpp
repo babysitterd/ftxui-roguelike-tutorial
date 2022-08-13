@@ -5,7 +5,9 @@
 
 #include <fmt/core.h>
 
-#include <ranges>
+#include <range/v3/algorithm.hpp>
+#include <range/v3/view/filter.hpp>
+
 #include <stdexcept>
 
 Item::Item(Type type, Point const& point, char codepoint, ftxui::Color const& color, Effect effect,
@@ -37,7 +39,7 @@ Item Item::Create(Item::Type type, Point const& point)
     case Type::LightningScroll:
         return Item{
             type, point, '~', ftxui::Color(255, 255, 0), [](auto& world, auto&) {
-                auto range = world.m_actors | std::views::filter([&world](auto const& x) {
+                auto range = world.m_actors | ranges::views::filter([&world](auto const& x) {
                                  return world.m_map->IsLit(x.m_point) && !x.IsDead();
                              });
 
@@ -51,10 +53,9 @@ Item Item::Create(Item::Type type, Point const& point)
                     return std::sqrt(std::pow(static_cast<double>(player.x - other.x), 2.) +
                                      std::pow(static_cast<double>(player.y - other.y), 2.));
                 };
-                auto it =
-                    std::ranges::min_element(range, [&distanceToPlayer](Actor& lhs, Actor& rhs) {
-                        return distanceToPlayer(lhs.m_point) < distanceToPlayer(rhs.m_point);
-                    });
+                auto it = ranges::min_element(range, [&distanceToPlayer](Actor& lhs, Actor& rhs) {
+                    return distanceToPlayer(lhs.m_point) < distanceToPlayer(rhs.m_point);
+                });
 
                 int const limit = 5;
                 if (distanceToPlayer(it->m_point) > limit)
@@ -87,7 +88,7 @@ Item Item::Create(Item::Type type, Point const& point)
                 };
 
                 auto range = world.m_actors |
-                             std::views::filter([&world, &target, inTheArea](auto const& i) {
+                             ranges::views::filter([&world, &target, inTheArea](auto const& i) {
                                  return !i.IsDead() && inTheArea(i);
                              });
 
@@ -109,7 +110,7 @@ Item Item::Create(Item::Type type, Point const& point)
                     dealDamage(world.m_player);
                 }
 
-                std::ranges::for_each(range, dealDamage);
+                ranges::for_each(range, dealDamage);
             },
             true,
             radius};
