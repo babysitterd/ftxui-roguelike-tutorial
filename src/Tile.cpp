@@ -10,6 +10,7 @@ namespace Dark
 
 const ftxui::Color Floor{ftxui::Color::Cyan2};
 const ftxui::Color Wall{0, 128, 128};
+const ftxui::Color Downstairs{50, 50, 150};
 
 } // namespace Dark
 
@@ -18,6 +19,7 @@ namespace Light
 
 const ftxui::Color Floor{ftxui::Color::Yellow2};
 const ftxui::Color Wall{ftxui::Color::Yellow1};
+const ftxui::Color Downstairs{ftxui::Color::Yellow3};
 
 } // namespace Light
 
@@ -40,6 +42,8 @@ Tile Tile::Create(Tile::Type type, bool light)
         return Tile{type, true, '.', light ? Color::Light::Floor : Color::Dark::Floor};
     case Type::Wall:
         return Tile{type, false, '#', light ? Color::Light::Wall : Color::Dark::Wall};
+    case Type::Downstairs:
+        return Tile{type, true, '>', light ? Color::Light::Downstairs : Color::Dark::Downstairs};
     case Type::Void:
         return Tile{type, false, ' ', ftxui::Color::Black};
     default:
@@ -55,6 +59,8 @@ Tile Tile::Create(char codepoint)
         return Tile{Type::Floor, true, codepoint, Color::Light::Floor};
     case '#':
         return Tile{Type::Wall, false, codepoint, Color::Light::Wall};
+    case '>':
+        return Tile{Type::Downstairs, true, codepoint, Color::Light::Downstairs};
     case ' ':
         return Tile{Type::Void, false, codepoint, ftxui::Color::Black};
     default:

@@ -55,6 +55,8 @@ class NaiveMapGenerator : public MapGeneratorBase
             }
         }
 
+        map.DigDownstairs(rooms.back().Center());
+
         return rooms;
     }
 };

@@ -22,6 +22,7 @@ class Map : public IMapMutator
     void CarveRoom(Room const& room) override;
     void DigHorizontalTunnel(int x1, int x2, int y) override;
     void DigVerticalTunnel(int y1, int y2, int x) override;
+    void DigDownstairs(Point const& point) override;
 
     Tile const& At(Point const& point) const;
     bool IsOutOfBounds(Point const& point) const;

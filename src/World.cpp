@@ -61,7 +61,7 @@ auto RenderHelp()
     add(" Use arrow keys to move around the dungeon, attack monsters and interact with NPC");
     add(" Use SPACE to skip the turn and let the monster come to you without getting hit");
     add(" Use i to open inventory and use items, d to drop stuff on the ground and g to pick up");
-    add(" Use q to give up and cowardly leave the dungeon");
+    add(" Use Enter while on > to go downstairs and q to give up and cowardly leave the dungeon");
 
     return ftxui::window(ftxui::text("[  Controls  ]") | ftxui::center, ftxui::vbox(help));
 }
@@ -71,16 +71,24 @@ auto RenderHelp()
 World::World(int mapWidth, int mapHeight, int fovRadius)
     : m_rng{}, m_generator(std::make_unique<NaiveMapGenerator>(mapWidth, mapHeight, RoomMaxSize,
                                                                RoomMinSize, MaxRooms, m_rng)),
-      m_map(mapWidth, mapHeight, fovRadius, *m_generator),
-      m_player(Actor::Create(Actor::Type::Player, m_map.m_rooms.front().Center()))
+      m_player(Actor::Create(Actor::Type::Player, {0, 0}))
 {
+    GenerateLevel(mapWidth, mapHeight, fovRadius);
+
     m_messages.Add("WELCOME TO THE UNDERWORLD, TRAVELER. LET THE GAME BEGIN!", Color::WelcomeText);
     m_messages.Add("Press v to open an ancient book of knowledge...", Color::HintText);
+}
 
-    m_map.LineOfSight(m_player.m_point);
+void World::GenerateLevel(int mapWidth, int mapHeight, int fovRadius)
+{
+    m_map = std::make_unique<FovMap>(mapWidth, mapHeight, fovRadius, *m_generator);
+    m_player.m_point = m_map->m_rooms.front().Center();
+    m_map->LineOfSight(m_player.m_point);
 
     GenerateMonsters();
     GenerateItems();
+
+    ++m_level;
 }
 
 ftxui::Element World::Render() const
@@ -90,8 +98,8 @@ ftxui::Element World::Render() const
         auto history = ftxui::window(
             ftxui::text("[  Message history  ]") | ftxui::center,
             m_messages.RenderAll(m_focusedMessage) | ftxui::vscroll_indicator | ftxui::frame |
-                ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height - 1) |
-                ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width - 1));
+                ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map->m_height - 1) |
+                ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map->m_width - 1));
 
         ftxui::Elements all;
         all.push_back(history);
@@ -103,15 +111,15 @@ ftxui::Element World::Render() const
     if (m_current == Mode::Game || m_current == Mode::SelectingTarget)
     {
         ftxui::Elements field;
-        field.reserve(m_map.m_height);
-        for (int i = 0; i < m_map.m_height; ++i)
+        field.reserve(m_map->m_height);
+        for (int i = 0; i < m_map->m_height; ++i)
         {
             ftxui::Elements row;
-            row.reserve(m_map.m_width);
-            for (int j = 0; j < m_map.m_width; ++j)
+            row.reserve(m_map->m_width);
+            for (int j = 0; j < m_map->m_width; ++j)
             {
                 Point const current{j, i};
-                bool const isLit = m_map.IsLit({j, i});
+                bool const isLit = m_map->IsLit({j, i});
                 auto dead = std::partition_point(m_actors.begin(), m_actors.end(),
                                                  [](auto& x) { return !x.IsDead(); });
                 // Render order:
@@ -140,7 +148,7 @@ ftxui::Element World::Render() const
                 // 5. Map terrain
                 else
                 {
-                    row.push_back(m_map.Render(current));
+                    row.push_back(m_map->Render(current));
                 }
 
                 if (m_current == Mode::SelectingTarget)
@@ -151,7 +159,7 @@ ftxui::Element World::Render() const
                     if (dx <= m_inventory[m_itemInUse].m_radius &&
                         dy <= m_inventory[m_itemInUse].m_radius)
                     {
-                        row.back() = row.back() | ftxui::bgcolor(ftxui::Color::Grey11);
+                        row.back() = row.back() | ftxui::bgcolor(ftxui::Color::DarkRedBis);
                     }
                 }
             }
@@ -177,8 +185,9 @@ ftxui::Element World::Render() const
         std::string const header = fmt::format("[ Select an item to {} ]",
                                                m_current == Mode::InventoryUse ? "use" : "drop");
         auto inventory = ftxui::window(ftxui::text(header) | ftxui::center, ftxui::vbox(all)) |
-                         ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height / 2) |
-                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width / 2) | ftxui::center;
+                         ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map->m_height / 2) |
+                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map->m_width / 2) |
+                         ftxui::center;
 
         mainArea = ftxui::border(inventory);
     }
@@ -195,13 +204,11 @@ ftxui::Element World::Render() const
             ftxui::text(std::string(actor.m_fighter.m_hpCurrent, ' ')) |
                 ftxui::bgcolor(Color::BarFilled),
             ftxui::text(std::string(actor.m_fighter.m_hpFull - actor.m_fighter.m_hpCurrent, ' ')) |
-                ftxui::bgcolor(Color::BarEmpty)
-
-        });
+                ftxui::bgcolor(Color::BarEmpty)});
     };
     stats[0] = ftxui::text(m_player.Name() + ":") | ftxui::color(ftxui::Color::Green);
     stats[1] = generateLifebar(m_player);
-    if (m_map.IsLit(m_mouse))
+    if (m_map->IsLit(m_mouse))
     {
         if (auto it = FindAt(m_actors.begin(), m_actors.end(), m_mouse); it != m_actors.end())
         {
@@ -209,10 +216,12 @@ ftxui::Element World::Render() const
             stats[3] = generateLifebar(*it);
         }
     }
+    stats[4] =
+        ftxui::text(fmt::format("Dungeon level: {}", m_level)) | ftxui::color(Color::WelcomeText);
 
     ftxui::Elements all;
-    all.push_back(mainArea | ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map.m_height + 1) |
-                  ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map.m_width + 1));
+    all.push_back(mainArea | ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map->m_height + 1) |
+                  ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map->m_width + 1));
     all.push_back(
         ftxui::hbox(ftxui::Elements{ftxui::border(ftxui::vbox(stats)),
                                     ftxui::border(m_messages.Render(displayed)) | ftxui::flex}));
@@ -332,10 +341,11 @@ bool World::EventHandler(ftxui::Event& event)
         }
     }
 
-    std::array<ftxui::Event, 6> const actions{ftxui::Event::ArrowUp,
+    std::array<ftxui::Event, 7> const actions{ftxui::Event::ArrowUp,
                                               ftxui::Event::ArrowRight,
                                               ftxui::Event::ArrowDown,
                                               ftxui::Event::ArrowLeft,
+                                              ftxui::Event::Return, /* downstairs */
                                               ftxui::Event::Character(' ') /* wait */,
                                               ftxui::Event::Character('g') /* pick up */};
 
@@ -345,6 +355,20 @@ bool World::EventHandler(ftxui::Event& event)
         if (m_player.IsDead())
         {
             return false;
+        }
+
+        if (event == ftxui::Event::Return)
+        {
+            if (m_map->At(m_player.m_point).GetType() == Tile::Type::Downstairs)
+            {
+                GenerateLevel(m_map->m_width, m_map->m_height, m_map->m_radius);
+                m_messages.Add("You descend the staircase.", Color::DescentText);
+            }
+            else
+            {
+                m_messages.Add("There are no stairs here.", Color::HintText);
+            }
+            return true;
         }
 
         // player makes a move
@@ -402,14 +426,14 @@ bool World::EventHandler(ftxui::Event& event)
             }
 
             // rewind if the move was illigal
-            if (m_map.IsOutOfBounds(m_player.m_point) || !m_map.At(m_player.m_point).CanWalk() ||
+            if (m_map->IsOutOfBounds(m_player.m_point) || !m_map->At(m_player.m_point).CanWalk() ||
                 isAlive)
             {
                 m_player.m_point = previous;
             }
             else
             {
-                m_map.LineOfSight(m_player.m_point);
+                m_map->LineOfSight(m_player.m_point);
             }
         }
 
@@ -429,10 +453,10 @@ bool World::EventHandler(ftxui::Event& event)
             {
                 MeleeAttack(actor, m_player);
             }
-            else if (m_map.IsLit(actor.m_point))
+            else if (m_map->IsLit(actor.m_point))
             {
                 auto const next = NextStep(actor.m_point, m_player.m_point);
-                if (m_map.At(next).CanWalk())
+                if (m_map->At(next).CanWalk())
                 {
                     actor.m_point = next;
                 }
@@ -497,7 +521,9 @@ void World::DealDamage(Actor& receiver, int damage, std::string const& descripti
 
 void World::GenerateMonsters()
 {
-    for (auto const& room : m_map.m_rooms)
+    m_actors.clear();
+
+    for (auto const& room : m_map->m_rooms)
     {
         auto const number = m_rng.RandomInt(0, MaxMonstersPerRoom);
         for (int i = 0; i < number; ++i)
@@ -523,7 +549,9 @@ void World::GenerateMonsters()
 
 void World::GenerateItems()
 {
-    for (auto const& room : m_map.m_rooms)
+    m_items.clear();
+
+    for (auto const& room : m_map->m_rooms)
     {
         auto const number = m_rng.RandomInt(0, MaxPotionsPerRoom);
         for (int i = 0; i < number; ++i)
@@ -535,8 +563,6 @@ void World::GenerateItems()
                                 m_rng.RandomInt(room.m_northWest.y + 1, room.m_southEast.y - 1));
             } while (FindAt(m_actors.begin(), m_actors.end(), whereTo) != m_actors.end() &&
                      FindAt(m_items.begin(), m_items.end(), whereTo) != m_items.end());
-
-            m_items.push_back(Item::Create(Item::Type::FireballScroll, whereTo));
 
             auto const dice = m_rng.RandomInt(0, 100);
             if (dice < 60)

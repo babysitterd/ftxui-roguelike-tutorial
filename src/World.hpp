@@ -36,13 +36,14 @@ class World
     void DealDamage(Actor& receiver, int damage, std::string const& description);
     void UseItem(std::size_t index, Point const& target);
 
+    void GenerateLevel(int mapWidth, int mapHeight, int fovRadius);
     void GenerateMonsters();
     void GenerateItems();
 
     RNG m_rng;
     std::unique_ptr<MapGeneratorBase> m_generator;
-    FovMap m_map;
     Actor m_player;
+    std::unique_ptr<FovMap> m_map;
     std::vector<Actor> m_actors;
     std::vector<Item> m_items;
     std::vector<Item> m_inventory;
@@ -51,4 +52,5 @@ class World
     std::size_t m_focusedMessage;
     Point m_mouse;
     std::size_t m_itemInUse;
+    int m_level = 0;
 };

@@ -38,7 +38,7 @@ Item Item::Create(Item::Type type, Point const& point)
         return Item{
             type, point, '~', ftxui::Color(255, 255, 0), [](auto& world, auto&) {
                 auto range = world.m_actors | std::views::filter([&world](auto const& x) {
-                                 return world.m_map.IsLit(x.m_point) && !x.IsDead();
+                                 return world.m_map->IsLit(x.m_point) && !x.IsDead();
                              });
 
                 if (range.empty())
@@ -75,7 +75,7 @@ Item Item::Create(Item::Type type, Point const& point)
             '~',
             ftxui::Color(255, 0, 0),
             [radius](auto& world, auto& target) {
-                if (!world.m_map.IsLit(target))
+                if (!world.m_map->IsLit(target))
                 {
                     throw std::logic_error("You cannot target an area that you cannot see.");
                 }

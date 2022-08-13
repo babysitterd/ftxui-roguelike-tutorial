@@ -9,7 +9,8 @@ class Tile : public Entity
     {
         Floor,
         Wall,
-        Void
+        Void,
+        Downstairs
     };
 
     Tile();

@@ -63,6 +63,11 @@ void Map::DigVerticalTunnel(int y1, int y2, int x)
     }
 }
 
+void Map::DigDownstairs(Point const& point)
+{
+    m_tiles[point.x + point.y * m_width] = Tile::Create(Tile::Type::Downstairs);
+}
+
 ftxui::Element Map::Render(Point const& point) const
 {
     return At(point).Render();
