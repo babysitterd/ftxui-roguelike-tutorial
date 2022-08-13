@@ -251,38 +251,29 @@ bool World::EventHandler(ftxui::Event& event)
         return true;
     }
 
-    // Message history tab opens, last message is focused
-    if (event == ftxui::Event::Character('v'))
+    if (m_current == Mode::Game)
     {
-        if (m_current == Mode::Game)
+        // Message history tab opens, last message is focused
+        if (event == ftxui::Event::Character('v'))
         {
             m_current = Mode::Messages;
             m_focusedMessage = m_messages.m_data.size() - 1;
+
+            return true;
         }
-
-        return true;
-    }
-
-    // Open inventory to use item
-    if (event == ftxui::Event::Character('i'))
-    {
-        if (m_current == Mode::Game)
+        // Open inventory to use item
+        if (event == ftxui::Event::Character('i'))
         {
             m_current = Mode::InventoryUse;
+            return true;
         }
 
-        return true;
-    }
-
-    // Open inventory to drop item
-    if (event == ftxui::Event::Character('d'))
-    {
-        if (m_current == Mode::Game)
+        // Open inventory to drop item
+        if (event == ftxui::Event::Character('d'))
         {
             m_current = Mode::InventoryDrop;
+            return true;
         }
-
-        return true;
     }
 
     // Handle inventory mode choice
