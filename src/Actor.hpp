@@ -15,7 +15,7 @@ class Actor : public Entity
     };
 
     Actor(Type type, Point const& point, char codepoint, ftxui::Color const& color,
-          Fighter const& fighter);
+          Fighter const& fighter, int xpGiven);
 
     static Actor Create(Type type, Point const& point);
 
@@ -27,6 +27,7 @@ class Actor : public Entity
     Type m_type;
     Point m_point;
     Fighter m_fighter;
+    int m_xpGiven;
 };
 
 // allows look up std::set by Point

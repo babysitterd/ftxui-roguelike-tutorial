@@ -6,6 +6,7 @@
 #include "Item.hpp"
 #include "MapGeneratorBase.hpp"
 #include "MessageLog.hpp"
+#include "Player.hpp"
 #include "Point.hpp"
 #include "RNG.hpp"
 
@@ -42,7 +43,7 @@ class World
 
     RNG m_rng;
     std::unique_ptr<MapGeneratorBase> m_generator;
-    Actor m_player;
+    Player m_player;
     std::unique_ptr<FovMap> m_map;
     std::vector<Actor> m_actors;
     std::vector<Item> m_items;

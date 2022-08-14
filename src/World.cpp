@@ -71,7 +71,7 @@ auto RenderHelp()
 World::World(int mapWidth, int mapHeight, int fovRadius)
     : m_rng{}, m_generator(std::make_unique<NaiveMapGenerator>(mapWidth, mapHeight, RoomMaxSize,
                                                                RoomMinSize, MaxRooms, m_rng)),
-      m_player(Actor::Create(Actor::Type::Player, {0, 0}))
+      m_player({0, 0})
 {
     GenerateLevel(mapWidth, mapHeight, fovRadius);
 
@@ -192,6 +192,18 @@ ftxui::Element World::Render() const
         mainArea = ftxui::border(inventory);
     }
 
+    // character information pane
+    ftxui::Elements info;
+    info.push_back(ftxui::text("-= HERO =-") | ftxui::center);
+    info.push_back(ftxui::text(fmt::format("LEVEL: {}", m_player.m_level)));
+    info.push_back(ftxui::text(fmt::format("ATTACK: {}", m_player.m_fighter.m_power)));
+    info.push_back(ftxui::text(fmt::format("DEFENCE: {}", m_player.m_fighter.m_defense)));
+    info.push_back(
+        ftxui::text(fmt::format("XP: {}/{}", m_player.m_currentXp, m_player.XpToNextLevel())));
+    info.push_back(ftxui::border(
+        ftxui::gauge(static_cast<float>(m_player.m_currentXp - m_player.XpToPreviousLevel()) /
+                     (m_player.XpToNextLevel() - m_player.XpToPreviousLevel()))));
+
     // stats pane
     constexpr std::size_t displayed = 5;
     ftxui::Elements stats(displayed, ftxui::text(""s));
@@ -219,9 +231,13 @@ ftxui::Element World::Render() const
     stats[4] =
         ftxui::text(fmt::format("Dungeon level: {}", m_level)) | ftxui::color(Color::WelcomeText);
 
+    ftxui::Elements plus;
+    plus.push_back(mainArea | ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map->m_height + 1) |
+                   ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map->m_width + 1));
+    plus.push_back(ftxui::border(ftxui::vbox(info)) | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 15));
+
     ftxui::Elements all;
-    all.push_back(mainArea | ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, m_map->m_height + 1) |
-                  ftxui::size(ftxui::WIDTH, ftxui::EQUAL, m_map->m_width + 1));
+    all.push_back(ftxui::hbox(plus));
     all.push_back(
         ftxui::hbox(ftxui::Elements{ftxui::border(ftxui::vbox(stats)),
                                     ftxui::border(m_messages.Render(displayed)) | ftxui::flex}));
@@ -492,6 +508,17 @@ void World::DealDamage(Actor& receiver, int damage, std::string const& descripti
                 fmt::format("{} for {} damage. {} is dead!", description, damage, receiver.Name()),
                 receiver.m_type == Actor::Type::Player ? Color::PlayerDie : Color::EnemyDie);
             receiver.Die();
+
+            if (receiver.m_type != Actor::Type::Player)
+            {
+                m_messages.Add(fmt::format("You gain {} experience points.", receiver.m_xpGiven),
+                               Color::PlayerAttack);
+                if (m_player.Gain(receiver.m_xpGiven))
+                {
+                    m_messages.Add(fmt::format("You advance to level {}!", m_player.m_level),
+                                   Color::HealthRecovered);
+                }
+            }
         }
         else
         {
